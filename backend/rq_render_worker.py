@@ -15,14 +15,14 @@ from __future__ import annotations
 
 from rq import Worker
 
-from backend.config import get_redis_client
+from backend.config import redis_client
 
 # Queue name must match backend.routes.upload._get_queue()
 LISTEN_QUEUES = ("ski-pipeline",)
 
 
 def main() -> None:
-    worker = Worker(list(LISTEN_QUEUES), connection=get_redis_client())
+    worker = Worker(list(LISTEN_QUEUES), connection=redis_client)
     worker.work()
 
 

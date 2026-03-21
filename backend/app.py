@@ -11,9 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import PLOTS_DIR, PROCESSED_DIR, RAW_DIR
-from backend.routes.upload import router as upload_router
-from backend.routes.sessions import router as sessions_router
-from backend.routes.metadata import router as metadata_router
+from backend.routes import metadata, sessions, upload
 
 
 def _init_deployment_logging() -> None:
@@ -57,7 +55,9 @@ async def _api_lifespan(_: FastAPI):
     yield
 
 
-# API sub-app: mounted at /api so it takes precedence over static files
+# --- API app (all REST routes live here; mounted at /api on the outer `app`) ---
+# Swagger UI: GET /api/docs   |   OpenAPI JSON: GET /api/openapi.json
+# The root `app` has no route handlers except mounts — do not use /docs on the root for API.
 api = FastAPI(title="ski-ai", version="2.0.0", lifespan=_api_lifespan)
 api.add_middleware(
     CORSMiddleware,
@@ -65,9 +65,9 @@ api.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-api.include_router(upload_router)
-api.include_router(sessions_router)
-api.include_router(metadata_router)
+api.include_router(upload.router)
+api.include_router(sessions.router)
+api.include_router(metadata.router)
 
 
 @api.get("/health")

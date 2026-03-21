@@ -2,7 +2,7 @@
 from pathlib import Path
 import os
 
-import redis as redis_lib
+import redis
 
 # Storage: "local" (default) or "s3"
 STORAGE_MODE = os.getenv("STORAGE_MODE", "local")
@@ -15,25 +15,9 @@ PLOTS_DIR = Path(os.getenv("PLOTS_DIR", "sessions/plots"))
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/ski.db")
 
-# Redis (Railway/Render: set REDIS_URL from your Redis plugin — do not rely on localhost in cloud)
+# Redis — on Railway set REDIS_URL from your Redis service (never rely on bare localhost in prod)
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-
-_redis_client: redis_lib.Redis | None = None
-
-
-def get_redis_client() -> redis_lib.Redis:
-    """Lazy Redis client — avoids connect/retry spam at import when REDIS_URL is wrong."""
-    global _redis_client
-    if _redis_client is None:
-        _redis_client = redis_lib.from_url(
-            REDIS_URL,
-            decode_responses=False,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-            retry_on_timeout=True,
-            health_check_interval=30,
-        )
-    return _redis_client
+redis_client = redis.from_url(REDIS_URL)
 
 # Upload limit (MB)
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "500"))
