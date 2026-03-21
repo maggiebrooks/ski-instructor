@@ -1,6 +1,9 @@
 """ski-ai FastAPI backend."""
 
 import logging
+import os
+import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -12,17 +15,50 @@ from backend.routes.upload import router as upload_router
 from backend.routes.sessions import router as sessions_router
 from backend.routes.metadata import router as metadata_router
 
+
+def _init_deployment_logging() -> None:
+    """Railway: log to stdout, throttle noisy loggers (avoids 500 logs/sec limit)."""
+    fmt = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    railway = bool(
+        os.getenv("RAILWAY_ENVIRONMENT")
+        or os.getenv("RAILWAY_PROJECT_ID")
+        or os.getenv("RAILWAY_SERVICE_NAME")
+    )
+    if railway:
+        logging.basicConfig(level=level, format=fmt, stream=sys.stdout, force=True)
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+        logging.getLogger("uvicorn").setLevel(logging.INFO)
+        logging.getLogger("redis").setLevel(logging.WARNING)
+        logging.getLogger("rq").setLevel(logging.INFO)
+    else:
+        Path("logs").mkdir(exist_ok=True)
+        logging.basicConfig(
+            level=level,
+            format=fmt,
+            filename="logs/api.log",
+            force=True,
+        )
+
+
+_init_deployment_logging()
+
 # Local disk layout (Docker / Render: ephemeral unless you attach a disk)
 for _dir in (RAW_DIR, PROCESSED_DIR, PLOTS_DIR, Path("data"), Path("logs")):
     _dir.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    filename="logs/api.log",
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    level=logging.INFO,
-)
+
+
+@asynccontextmanager
+async def _api_lifespan(_: FastAPI):
+    """Re-apply uvicorn logger levels after workers attach (Railway)."""
+    if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"):
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    yield
+
 
 # API sub-app: mounted at /api so it takes precedence over static files
-api = FastAPI(title="ski-ai", version="2.0.0")
+api = FastAPI(title="ski-ai", version="2.0.0", lifespan=_api_lifespan)
 api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

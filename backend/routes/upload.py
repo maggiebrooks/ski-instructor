@@ -8,10 +8,11 @@ import logging
 from pathlib import Path
 from uuid import uuid4
 
+import redis.exceptions
 from fastapi import APIRouter, UploadFile, HTTPException
 from rq import Queue
 
-from backend.config import RAW_DIR, MAX_UPLOAD_MB, redis_client
+from backend.config import RAW_DIR, MAX_UPLOAD_MB, get_redis_client
 from backend.models import create_job, lookup_by_hash
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ SKIP_PREFIXES = ("__MACOSX", ".")
 
 
 def _get_queue() -> Queue:
-    return Queue("ski-pipeline", connection=redis_client)
+    return Queue("ski-pipeline", connection=get_redis_client())
 
 
 def _flatten_single_top_level(session_dir: Path) -> None:
@@ -81,7 +82,14 @@ async def upload_session(file: UploadFile):
 
     create_job(session_id, session_hash=session_hash)
 
-    queue = _get_queue()
-    queue.enqueue("backend.worker.run_pipeline", session_id)
+    try:
+        queue = _get_queue()
+        queue.enqueue("backend.worker.run_pipeline", session_id)
+    except redis.exceptions.RedisError as e:
+        logger.warning("Redis unavailable (check REDIS_URL): %s", e)
+        raise HTTPException(
+            503,
+            "Job queue unavailable. Ensure Redis is running and REDIS_URL is set.",
+        ) from e
 
     return {"session_id": session_id, "status": "processing"}
