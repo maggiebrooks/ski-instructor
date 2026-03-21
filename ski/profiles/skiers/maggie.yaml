@@ -1,0 +1,11 @@
+skier_id: maggie
+
+height_in: 63
+weight_lbs: 140
+ability_level: advanced
+
+equipment:
+  boots: 22.5 salomon S-Pro Alpha 110 2024
+
+preferences:
+  dominant_side: right

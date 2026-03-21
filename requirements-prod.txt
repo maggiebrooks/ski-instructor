@@ -1,0 +1,6 @@
+# Web stack + job queue (install after requirements.txt)
+fastapi>=0.100
+uvicorn[standard]>=0.24
+redis>=5.0
+rq>=2.0
+python-multipart>=0.0.6

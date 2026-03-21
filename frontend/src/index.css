@@ -1,0 +1,56 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #222;
+  background: #f8f9fa;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #0066cc;
+}
+
+button {
+  font-family: inherit;
+}
+
+.score-confidence {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.score-confidence.high {
+  color: #16a34a;
+}
+
+.score-confidence.medium {
+  color: #d97706;
+}
+
+.score-confidence.low {
+  color: #dc2626;
+}
+
+.warning-banner {
+  background: #fef3c7;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.insights-section {
+  margin-bottom: 24px;
+}
+
+.insight-card {
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}

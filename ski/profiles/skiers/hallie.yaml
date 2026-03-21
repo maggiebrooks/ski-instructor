@@ -1,0 +1,8 @@
+skier_id: hallie
+height_in: 75.0
+weight_lbs: 185.0
+ability_level: advanced
+equipment:
+  boots: Atomic Hawx
+preferences:
+  dominant_side: right

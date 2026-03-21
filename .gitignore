@@ -1,0 +1,65 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Secrets & local env (never commit)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# SQLite & local DBs (may contain user/session data)
+data/*.db
+*.db
+
+# Pipeline / legacy data outputs (can be large + private)
+data/processed/
+data/raw/
+# Raw Sensor Logger trees under data/ (huge CSVs) — keep only e.g. database.py at data/
+data/*/
+data/*.zip
+dump.rdb
+output/
+
+# Uploaded sessions & generated artifacts (PRIVATE — user ski data)
+sessions/raw/
+sessions/processed/
+sessions/plots/
+
+# Logs (may contain paths, errors, session ids)
+logs/
+*.log
+
+# Environments
+.venv/
+venv/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
+
+# Matplotlib cache
+.matplotlib/
+
+# Docker / local tooling
+.docker/
+
+# Cursor / local AI (optional — remove these lines if you want to share rules)
+# .cursor/

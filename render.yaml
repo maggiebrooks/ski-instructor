@@ -1,0 +1,18 @@
+# Render Blueprint — https://render.com/docs/yaml-spec
+#
+# Create a Redis instance in the dashboard (or use Upstash) and set REDIS_URL on both services.
+# Build context must be repo root (monorepo: backend/, ski/, data/, features/, transformations/).
+
+services:
+  - type: web
+    name: ski-ai-api
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+
+  - type: worker
+    name: ski-ai-worker
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+    dockerCommand: python -m backend.rq_render_worker
