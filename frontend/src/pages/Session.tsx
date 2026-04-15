@@ -1,7 +1,28 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { AxiosError } from 'axios'
 import { deleteSession, getSession } from '../api'
 import Progress from '../components/Progress'
+
+/** One-off network blips should not kill polling; require several misses in a row. */
+const SESSION_POLL_MAX_CONSECUTIVE_FAILURES = 8
+
+function formatSessionPollError(err: unknown): string {
+  const ax = err as AxiosError<{ detail?: string }>
+  if (ax.code === 'ECONNABORTED') {
+    return 'Request timed out while checking session status. Your run may still be processing — refresh the page or open this link again in a minute.'
+  }
+  if (ax.response?.status === 404) {
+    return (
+      'Session not found. If you just uploaded, the API may have restarted without persistent storage ' +
+      '(Railway: mount a volume for data/ and sessions/, or use a managed database).'
+    )
+  }
+  const detail = ax.response?.data?.detail
+  if (typeof detail === 'string') return `Failed to load session: ${detail}`
+  if (ax.message) return `Failed to load session: ${ax.message}`
+  return 'Failed to load session'
+}
 
 interface Summary {
   runs: number | null
@@ -35,6 +56,7 @@ export default function Session() {
   const [copied, setCopied] = useState(false)
   const intervalRef = useRef<number | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
+  const pollFailuresRef = useRef(0)
 
   useEffect(() => {
     if (!id) return
@@ -42,16 +64,21 @@ export default function Session() {
     async function poll() {
       try {
         const res = await getSession(id!)
+        pollFailuresRef.current = 0
         setData(res)
         if (res.status === 'complete' || res.status === 'error') {
           if (intervalRef.current) clearInterval(intervalRef.current)
         }
-      } catch {
-        setError('Failed to load session')
-        if (intervalRef.current) clearInterval(intervalRef.current)
+      } catch (e) {
+        pollFailuresRef.current += 1
+        if (pollFailuresRef.current >= SESSION_POLL_MAX_CONSECUTIVE_FAILURES) {
+          setError(formatSessionPollError(e))
+          if (intervalRef.current) clearInterval(intervalRef.current)
+        }
       }
     }
 
+    pollFailuresRef.current = 0
     poll()
     intervalRef.current = window.setInterval(poll, 3000)
 

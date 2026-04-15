@@ -8,6 +8,9 @@ import axios from 'axios'
 const baseURL =
   (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '').trim() || '/api'
 
+/** Generous read timeout for session list/detail (large reports, slow networks). */
+const SESSION_READ_TIMEOUT_MS = 180_000
+
 export const api = axios.create({
   baseURL,
 })
@@ -33,7 +36,9 @@ export async function uploadSession(file: File) {
 }
 
 export async function getSession(id: string) {
-  const res = await api.get(`/session/${id}`)
+  const res = await api.get(`/session/${id}`, {
+    timeout: SESSION_READ_TIMEOUT_MS,
+  })
   return res.data
 }
 
@@ -54,11 +59,15 @@ export interface SessionListItem {
 }
 
 export async function listSessions(): Promise<SessionListItem[]> {
-  const res = await api.get<SessionListItem[]>('/sessions')
+  const res = await api.get<SessionListItem[]>('/sessions', {
+    timeout: SESSION_READ_TIMEOUT_MS,
+  })
   return res.data
 }
 
 export async function deleteSession(id: string) {
-  const res = await api.delete(`/session/${id}`)
+  const res = await api.delete(`/session/${id}`, {
+    timeout: 60_000,
+  })
   return res.data
 }
