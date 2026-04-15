@@ -70,7 +70,7 @@ Returns processing status and the full report when complete.
 {
   "session_id": "a1b2c3...",
   "status": "processing",
-  "progress": "analyzing",
+  "progress": "running_pipeline",
   "report": null
 }
 ```
@@ -104,7 +104,7 @@ Returns processing status and the full report when complete.
 
 **404** if neither a job nor a report exists for the session.
 
-**Progress stages:** `processing` -> `analyzing` -> `generating_plots` -> `complete` (or `error`).
+**Progress stages:** `queued` → `parsing_sensor_data` → `running_pipeline` → `generating_report` → `generating_plots` → `complete` (or `error`). Legacy values `processing` / `analyzing` may still appear on old jobs; treat them like `parsing_sensor_data` / `generating_report` in the UI.
 
 ---
 
@@ -208,7 +208,7 @@ from backend.models import create_job, get_job, update_job, lookup_by_hash
 
 job_id = create_job("session_id", session_hash="sha256...")
 job = get_job("session_id")          # Most recent job for this session
-update_job("session_id", "analyzing")
+update_job("session_id", "generating_report")
 update_job("session_id", "error", error="Pipeline crashed")
 existing = lookup_by_hash("sha256...")  # Returns session_id or None
 ```

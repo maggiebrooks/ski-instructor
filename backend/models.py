@@ -50,7 +50,7 @@ def create_job(
     conn.execute(
         """INSERT INTO jobs (job_id, session_id, session_hash, status,
                              progress_stage, created_at, updated_at)
-           VALUES (?, ?, ?, 'processing', 'processing', ?, ?)""",
+           VALUES (?, ?, ?, 'processing', 'queued', ?, ?)""",
         (job_id, session_id, session_hash, now, now),
     )
     conn.commit()

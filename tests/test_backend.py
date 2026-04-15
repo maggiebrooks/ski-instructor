@@ -361,7 +361,7 @@ class TestSessionEndpoints:
             "job_id": "j1",
             "session_id": "sid1",
             "status": "processing",
-            "progress_stage": "analyzing",
+            "progress_stage": "generating_report",
             "error_message": None,
         }
         with (
@@ -372,7 +372,7 @@ class TestSessionEndpoints:
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "processing"
-        assert body["progress"] == "analyzing"
+        assert body["progress"] == "generating_report"
         assert body["report"] is None
 
     def test_get_session_complete(self, client, tmp_path):
@@ -522,7 +522,7 @@ class TestJobsModels:
         assert job is not None
         assert job["session_id"] == "sess_1"
         assert job["status"] == "processing"
-        assert job["progress_stage"] == "processing"
+        assert job["progress_stage"] == "queued"
 
     def test_get_missing_returns_none(self, tmp_path):
         from backend.models import get_job
@@ -536,9 +536,9 @@ class TestJobsModels:
         db = str(tmp_path / "test.db")
         create_job("sess_2", db_path=db)
 
-        update_job("sess_2", "analyzing", db_path=db)
+        update_job("sess_2", "generating_report", db_path=db)
         job = get_job("sess_2", db_path=db)
-        assert job["progress_stage"] == "analyzing"
+        assert job["progress_stage"] == "generating_report"
         assert job["status"] == "processing"
 
     def test_update_complete(self, tmp_path):

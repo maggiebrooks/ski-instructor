@@ -7,6 +7,9 @@ import Progress from '../components/Progress'
 /** One-off network blips should not kill polling; require several misses in a row. */
 const SESSION_POLL_MAX_CONSECUTIVE_FAILURES = 8
 
+/** How often to refresh session status while processing (ms). */
+const SESSION_POLL_INTERVAL_MS = 2000
+
 function formatSessionPollError(err: unknown): string {
   const ax = err as AxiosError<{ detail?: string }>
   if (ax.code === 'ECONNABORTED') {
@@ -80,7 +83,7 @@ export default function Session() {
 
     pollFailuresRef.current = 0
     poll()
-    intervalRef.current = window.setInterval(poll, 3000)
+    intervalRef.current = window.setInterval(poll, SESSION_POLL_INTERVAL_MS)
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)

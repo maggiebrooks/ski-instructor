@@ -83,7 +83,7 @@ Phone (Sensor Logger app)
 
 **Key backend features:**
 - SHA-256 duplicate upload detection
-- Multi-stage progress tracking (processing -> analyzing -> generating_plots -> complete)
+- Multi-stage progress tracking (`queued` → `parsing_sensor_data` → `running_pipeline` → `generating_report` → `generating_plots` → `complete`)
 - Error capture with full tracebacks in worker logs
 - Storage abstraction layer (local FS today, S3 later)
 - File logging (`logs/api.log`, `logs/worker.log`)

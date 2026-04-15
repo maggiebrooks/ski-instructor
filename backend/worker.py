@@ -71,6 +71,8 @@ def run_pipeline(session_id: str) -> dict:
         # --- 1. Pre-pipeline validation (fail early if invalid) ---
         from backend.validation.input_validator import validate_raw_session
 
+        update_job(session_id, "parsing_sensor_data")
+        logger.info("Stage: parsing_sensor_data for %s", session_id)
         validation = validate_raw_session(raw_path)
         logger.info(
             "Input validation passed for %s (quality=%.2f)",
@@ -81,8 +83,8 @@ def run_pipeline(session_id: str) -> dict:
         processed_dir = get_path(session_id, "processed")
         plots_dir = get_path(session_id, "plots")
 
-        update_job(session_id, "processing")
-        logger.info("Running pipeline for %s", session_id)
+        update_job(session_id, "running_pipeline")
+        logger.info("Stage: running_pipeline for %s", session_id)
 
         # --- 2. Run pipeline (unchanged) ---
         processor = SessionProcessor(db_path=DB_PATH, processing_version="2.0.0")
@@ -93,8 +95,8 @@ def run_pipeline(session_id: str) -> dict:
             output_dir=plots_dir,
         )
 
-        update_job(session_id, "analyzing")
-        logger.info("Running analytics for %s", session_id)
+        update_job(session_id, "generating_report")
+        logger.info("Stage: generating_report for %s", session_id)
         analyzer = TurnAnalyzer(DB_PATH)
         insights_engine = TurnInsights()
         report_lines = insights_engine.session_report(analyzer, session_id)
@@ -161,7 +163,7 @@ def run_pipeline(session_id: str) -> dict:
         logger.info("Data quality flags for %s: %s", session_id, data_quality_flags)
 
         update_job(session_id, "generating_plots")
-        logger.info("Generating turn signature for %s", session_id)
+        logger.info("Stage: generating_plots for %s", session_id)
         fig = plot_session_signature(analyzer, session_id, show=False)
 
         buf = io.BytesIO()
@@ -241,6 +243,7 @@ def run_pipeline(session_id: str) -> dict:
         logger.info("Output validation passed for %s", session_id)
 
         update_job(session_id, "complete")
+        logger.info("Stage: complete for %s", session_id)
         report_path = get_path(session_id, "processed", "report.json")
         logger.info("Pipeline complete for %s -> %s", session_id, report_path)
         return report
@@ -248,4 +251,5 @@ def run_pipeline(session_id: str) -> dict:
     except Exception as e:
         logger.exception("Pipeline failed for %s", session_id)
         update_job(session_id, "error", error=str(e))
+        logger.info("Stage: error for %s", session_id)
         raise
