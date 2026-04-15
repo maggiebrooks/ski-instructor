@@ -3,6 +3,28 @@ import { Link, useNavigate } from 'react-router-dom'
 import { uploadSession } from '../api'
 import { AxiosError } from 'axios'
 
+function formatUploadError(err: unknown): string {
+  if (err instanceof Error && !('isAxiosError' in err)) {
+    return err.message
+  }
+  const ax = err as AxiosError<{ detail?: string | { msg?: string }[] }>
+  if (ax.code === 'ECONNABORTED') {
+    return 'Upload timed out. Try again, use a faster connection, or a smaller ZIP.'
+  }
+  if (!ax.response) {
+    return (
+      ax.message ||
+      'Network error — open DevTools → Network, confirm the upload goes to your Railway …/api host.'
+    )
+  }
+  const d = ax.response.data?.detail
+  if (typeof d === 'string') return d
+  if (Array.isArray(d)) {
+    return d.map((x) => (typeof x === 'object' && x && 'msg' in x ? String((x as { msg: string }).msg) : JSON.stringify(x))).join('; ')
+  }
+  return `Upload failed (HTTP ${ax.response.status})`
+}
+
 export default function Upload() {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -18,9 +40,7 @@ export default function Upload() {
       const res = await uploadSession(file)
       navigate(`/session/${res.session_id}`)
     } catch (err) {
-      const axErr = err as AxiosError<{ detail?: string }>
-      const msg = axErr.response?.data?.detail || 'Upload failed'
-      setError(msg)
+      setError(formatUploadError(err))
     } finally {
       setUploading(false)
     }

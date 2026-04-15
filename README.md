@@ -19,22 +19,47 @@ comparison. Processing version 2.0.0.
 ```bash
 # Prerequisites: Python 3.12+, Node.js 18+, Redis
 
+# From repository root — activate the virtualenv you already use, e.g.:
+#   source venv/bin/activate
+#   source .venv/bin/activate
+# (Windows: venv\Scripts\activate). Create one first only if you do not have one:
+#   python3 -m venv venv
+
 # Install Python deps
-pip install -r requirements.txt
-pip install fastapi uvicorn redis rq python-multipart
+python -m pip install -r requirements.txt
+python -m pip install fastapi uvicorn redis rq python-multipart honcho
 
 # Install frontend deps
 cd frontend && npm install && cd ..
 
-# Start everything (4 terminals)
-redis-server                                    # Terminal 1
-rq worker ski-pipeline                          # Terminal 2
-uvicorn backend.app:app --reload --port 8000    # Terminal 3
-cd frontend && npm run dev                      # Terminal 4
+# Start everything — pick one:
+
+# Option A — one terminal (Honcho runs API + worker + Vite; venv must be active)
+# Requires Redis on localhost:6379 (often already running via Homebrew/Docker).
+honcho start
+# If you see "Address already in use" for 6379, Redis is already up — use `honcho start` only (default Procfile).
+# If Redis is not running and port 6379 is free: honcho -f Procfile.with-redis start
+
+# Option B — four terminals (activate your venv in each that runs Python)
+# Skip redis-server if Redis is already running on 6379.
+redis-server
+python -m backend.rq_render_worker
+uvicorn backend.app:app --reload --port 8000
+cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173`. Upload a Sensor Logger `.zip` and watch the
-results appear.
+From the **repository root**, with your usual virtualenv activated (so `python`,
+`pip`, and `honcho` resolve inside that env). If you skip activation, call
+`venv/bin/python` and `venv/bin/honcho` using **your** venv directory name.
+Install `frontend` dependencies once (`cd frontend && npm install`). Honcho
+reads [`Procfile`](Procfile) (API, RQ worker, Vite). Redis is started separately unless you use [`Procfile.with-redis`](Procfile.with-redis).
+
+Open `http://localhost:5173`. API docs: `http://localhost:8000/api/docs`.
+Upload a Sensor Logger `.zip` and watch the results appear.
+
+**Railway** (`ski-ai-api`, `ski-ai-worker`, Redis) is for **production** only.
+For local dev you still run Redis + API + worker on your machine (or point
+`REDIS_URL` at a tunnel — not required for typical setup).
 
 ### Docker (API + worker, Render-compatible)
 
@@ -63,6 +88,95 @@ python main.py
 ```bash
 python -m pytest tests/ -v    # 160 tests
 ```
+
+---
+
+## Deployment
+
+This project uses **[Railway](https://railway.app/)** for the backend API, background worker, and Redis.
+
+### Services
+
+| Service | Role |
+|---------|------|
+| **ski-ai-api** | FastAPI (`uvicorn backend.app:app`) |
+| **ski-ai-worker** | RQ worker processing the `ski-pipeline` queue |
+| **Redis** | Managed via Railway Redis (or compatible add-on) |
+
+### Environment variables
+
+| Variable | Notes |
+|----------|--------|
+| **`REDIS_URL`** | Redis connection string — **required on both the API and the worker**. Same value on both services. |
+
+If `REDIS_URL` is missing on either service, uploads may fail to enqueue or jobs may never run.
+
+### Running locally
+
+```bash
+# Terminal 1 — Redis
+redis-server
+
+# Terminal 2 — API
+uvicorn backend.app:app --reload --port 8000
+
+# Terminal 3 — Worker (from repository root; uses `REDIS_URL` or defaults to localhost)
+python -m backend.rq_render_worker
+
+# Terminal 4 — Frontend (optional)
+cd frontend && npm run dev
+```
+
+### Accessing the API
+
+| | Path |
+|---|------|
+| **Swagger UI** | `/api/docs` |
+| **OpenAPI JSON** | `/api/openapi.json` |
+
+Example endpoints:
+
+- `POST /api/upload-session`
+- `GET /api/session/{id}`
+- `DELETE /api/session/{id}`
+
+On Railway, open **`https://<your-api-host>/api/docs`** (e.g. `https://ski-ai-api-production.up.railway.app/api/docs` if that matches your service URL).
+
+**Tips**
+
+- Use **`/api/docs`**, not `/docs` on the root app — REST routes are mounted under `/api`, so Swagger lives on the API sub-app.
+- Ensure the **worker** service has **`REDIS_URL`**, not only the web API.
+
+---
+
+## Frontend deployment (MVP)
+
+**Goal:** Ship the upload UI and session pages on a public URL, talking to the live Railway API.
+
+| Option | Notes |
+|--------|--------|
+| **Vercel** (recommended for MVP) | React + Vite deploys easily; free tier; set one env var for the API base. |
+| **Railway** | Possible to Dockerize or static-serve the frontend; more moving parts than Vercel for a Vite SPA. |
+
+**MVP path**
+
+1. Keep **API + worker + Redis** on Railway.
+2. Deploy **`frontend/`** on **Vercel** (or similar static host).
+3. Set **`VITE_API_BASE_URL`** to your Railway API **including `/api`** (see below).
+
+### Vercel (suggested steps)
+
+1. Push the repo to GitHub (if it is not already).
+2. Vercel → **Add New** → **Project** → import the repo; set the **root directory** to `frontend` if Vercel should only build the SPA.
+3. **Environment variable** (Production — adjust host to your Railway URL):
+
+   ```bash
+   VITE_API_BASE_URL=https://ski-ai-api-production.up.railway.app/api
+   ```
+
+   Axios uses paths like `/upload-session`; `baseURL` must be the API prefix **`.../api`**, not only the origin.
+
+4. Build and deploy, then test upload and session pages against production.
 
 ---
 
@@ -184,4 +298,4 @@ physics-based normalization, turn signatures, metadata system, backend API,
 storage abstraction, React frontend skeleton, job tracking, dedup, logging.
 
 **Next:** Upload page polish, results dashboard, GPS map, mobile responsive,
-session comparison, EC2 deployment.
+session comparison, frontend on Vercel (see [Frontend deployment (MVP)](#frontend-deployment-mvp)).

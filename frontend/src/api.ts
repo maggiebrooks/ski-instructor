@@ -1,17 +1,34 @@
 import axios from 'axios'
 
-/** Dev: proxy `/api` via Vite. If proxy fails, set `VITE_API_BASE_URL=http://127.0.0.1:8000/api` in `.env.local`. */
+/**
+ * Base URL for `/api/*` requests.
+ * - Dev: unset → `/api` (Vite proxy to local backend). Override in `.env.local` if needed.
+ * - Vercel/production: set `VITE_API_BASE_URL` to your Railway API origin + `/api` (build-time).
+ */
 const baseURL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '/api'
+  (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '').trim() || '/api'
 
 export const api = axios.create({
   baseURL,
 })
 
+/** Large uploads must hit the real API host; relative `/api` on Vercel is not Railway. */
+function assertAbsoluteApiBaseForUpload() {
+  if (typeof window === 'undefined' || !import.meta.env.PROD) return
+  if (baseURL.startsWith('/')) {
+    throw new Error(
+      'Missing API URL for production: in Vercel set VITE_API_BASE_URL to your Railway API origin plus /api (e.g. https://<service>.up.railway.app/api), then redeploy.',
+    )
+  }
+}
+
 export async function uploadSession(file: File) {
+  assertAbsoluteApiBaseForUpload()
   const form = new FormData()
   form.append('file', file)
-  const res = await api.post('/upload-session', form)
+  const res = await api.post('/upload-session', form, {
+    timeout: 45 * 60 * 1000, // large ZIP + slow uplink (ms)
+  })
   return res.data
 }
 
