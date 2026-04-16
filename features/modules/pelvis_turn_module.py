@@ -28,7 +28,7 @@ class PelvisTurnModule(FeatureModule):
 
         peak_row = turn_df.iloc[peak_pos]
         peak_gz = float(abs(peak_row["gyro_z"]))
-        speed_ms = float(peak_row["speed"]) if peak_row["speed"] >= 0 else 0.0
+        speed_ms = float(peak_row["speed"]) if "speed" in peak_row.index and peak_row["speed"] >= 0 else 0.0
         speed_kmh = speed_ms * 3.6
 
         if peak_gz > 0.1 and speed_ms > 1.0:

@@ -223,15 +223,33 @@ def segment_runs(df, window_s=30, descent_thresh=-0.3, ascent_thresh=0.3,
     """Classify each row as ``skiing``, ``lift``, or ``idle``.
 
     Uses the barometric ``relativeAltitude`` rate of change over a rolling
-    window.  Short segments (< *min_segment_s*) are merged into their
-    neighbours to remove classification flicker.
+    window.  Falls back to GPS ``altitude`` (noisier) or treats the entire
+    session as one skiing run when no altitude source is available.
 
     Adds columns: ``alt_rate``, ``activity``, ``run_id``.
     """
     df = df.copy()
     window = int(window_s * sample_rate)
 
-    alt = pd.Series(df["relativeAltitude"].values)
+    alt_col = None
+    for candidate in ("relativeAltitude", "altitudeAboveMeanSeaLevel", "altitude"):
+        if candidate in df.columns and df[candidate].notna().any():
+            alt_col = candidate
+            break
+
+    if alt_col is None:
+        logger.warning(
+            "No altitude column found — treating entire session as one skiing run"
+        )
+        df["alt_rate"] = 0.0
+        df["activity"] = "skiing"
+        df["run_id"] = 1
+        return df
+
+    if alt_col != "relativeAltitude":
+        logger.info("Barometer missing; falling back to GPS column '%s'", alt_col)
+
+    alt = pd.Series(df[alt_col].values)
     secs = pd.Series(df["seconds"].values)
     alt_rate = alt.diff(window) / secs.diff(window)
     alt_rate = alt_rate.bfill()
@@ -344,10 +362,15 @@ def detect_turns_by_run(df, column="gyro_z", height=0.5, distance=20,
         run_end_s = run_df["seconds"].iloc[-1]
         duration = run_end_s - run_start_s
 
-        alt_start = run_df["altitudeAboveMeanSeaLevel"].iloc[0]
-        alt_end = run_df["altitudeAboveMeanSeaLevel"].iloc[-1]
+        _alt_col = next(
+            (c for c in ("altitudeAboveMeanSeaLevel", "altitude", "relativeAltitude")
+             if c in run_df.columns and run_df[c].notna().any()),
+            None,
+        )
+        alt_start = run_df[_alt_col].iloc[0] if _alt_col else None
+        alt_end = run_df[_alt_col].iloc[-1] if _alt_col else None
 
-        valid_speed = run_df.loc[run_df["speed"] >= 0, "speed"]
+        valid_speed = run_df.loc[run_df["speed"] >= 0, "speed"] if "speed" in run_df.columns else pd.Series(dtype=float)
 
         # Run-level turn quality aggregates
         angles = [t["pelvis_turn_angle_deg"] for t in per_turn]
@@ -361,7 +384,7 @@ def detect_turns_by_run(df, column="gyro_z", height=0.5, distance=20,
             "start_s": round(float(run_start_s), 1),
             "end_s": round(float(run_end_s), 1),
             "duration_s": round(float(duration), 1),
-            "vertical_drop_m": round(float(alt_start - alt_end), 1),
+            "vertical_drop_m": round(float(alt_start - alt_end), 1) if alt_start is not None and alt_end is not None else None,
             "num_turns": int(len(peaks)),
             "avg_speed_ms": round(float(valid_speed.mean()), 2) if len(valid_speed) > 0 else 0,
             "max_speed_ms": round(float(valid_speed.max()), 2) if len(valid_speed) > 0 else 0,
@@ -475,10 +498,16 @@ def plot_session(df, output_path, run_results=None):
     fig, axes = plt.subplots(5, 1, figsize=(18, 17), sharex=True)
 
     # Panel 1: Altitude profile
-    axes[0].plot(df["seconds"], df["altitudeAboveMeanSeaLevel"],
-                 linewidth=0.8, color="tab:brown")
+    _plot_alt_col = next(
+        (c for c in ("altitudeAboveMeanSeaLevel", "altitude", "relativeAltitude")
+         if c in df.columns and df[c].notna().any()),
+        None,
+    )
+    if _plot_alt_col:
+        axes[0].plot(df["seconds"], df[_plot_alt_col],
+                     linewidth=0.8, color="tab:brown")
     _shade_activity(axes[0], df)
-    axes[0].set_ylabel("Altitude MSL (m)")
+    axes[0].set_ylabel("Altitude (m)")
     axes[0].set_title("Altitude Profile  (blue = skiing, red = lift, grey = idle)")
     axes[0].grid(True, alpha=0.3)
 
@@ -496,10 +525,11 @@ def plot_session(df, output_path, run_results=None):
     axes[1].grid(True, alpha=0.3)
 
     # Panel 3: Speed
-    valid_speed = df["speed"].copy()
-    valid_speed[valid_speed < 0] = np.nan
-    axes[2].plot(df["seconds"], valid_speed * 3.6, linewidth=0.5,
-                 color="tab:purple")
+    if "speed" in df.columns:
+        valid_speed = df["speed"].copy()
+        valid_speed[valid_speed < 0] = np.nan
+        axes[2].plot(df["seconds"], valid_speed * 3.6, linewidth=0.5,
+                     color="tab:purple")
     _shade_activity(axes[2], df)
     axes[2].set_ylabel("Speed (km/h)")
     axes[2].set_title("GPS Speed")

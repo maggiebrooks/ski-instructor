@@ -60,7 +60,7 @@ def compute_carving_metrics(segment, init_pos, apex_pos, finish_pos):
     """
     secs = segment["seconds"].values
     gz = segment["gyro_z"].values
-    speed = segment["speed"].values
+    speed = segment["speed"].values if "speed" in segment.columns else np.zeros(len(segment))
     roll = segment["roll"].values
 
     edge_build = None
