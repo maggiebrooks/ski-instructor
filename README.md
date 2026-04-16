@@ -43,7 +43,7 @@ honcho start
 # Option B — four terminals (activate your venv in each that runs Python)
 # Skip redis-server if Redis is already running on 6379.
 redis-server
-python -m backend.rq_render_worker
+rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
 uvicorn backend.app:app --reload --port 8000
 cd frontend && npm run dev
 ```
@@ -71,9 +71,7 @@ docker run --rm -p 10000:10000 -e REDIS_URL=redis://host.docker.internal:6379 sk
 ```
 
 - Swagger UI: `http://localhost:10000/api/docs` (API is mounted under `/api`).
-- RQ worker (same image, separate container/process):  
-  `python -m backend.rq_render_worker`  
-  Uses queue name `ski-pipeline` and `REDIS_URL` from the environment.
+- The image runs **`backend/start.sh`**: RQ worker (`rq worker ski-pipeline`) plus uvicorn in one container — shared filesystem for uploads. Set `REDIS_URL`. Do not start a second worker elsewhere.
 - Optional Blueprint: [`render.yaml`](render.yaml).
 - If `docker build` fails during `apt-get` with **Hash Sum mismatch**, retry the build (mirror glitch) or ensure the Dockerfile uses a pinned base like `python:3.11-slim-bookworm`. If `pip install` later fails compiling a package, add `build-essential` back in the Dockerfile.
 
@@ -99,15 +97,15 @@ This project uses **[Railway](https://railway.app/)** for the backend API, backg
 
 | Service | Role |
 |---------|------|
-| **ski-ai-api** | FastAPI (`uvicorn backend.app:app`) |
-| **ski-ai-worker** | RQ worker processing the `ski-pipeline` queue |
+| **ski-ai** (recommended) | Single service: `backend/start.sh` runs `rq worker ski-pipeline` + FastAPI — one worker, shared disk. |
+| **ski-ai-api** + **ski-ai-worker** | Legacy split: two services must share storage or use separate worker only if you know the tradeoffs. |
 | **Redis** | Managed via Railway Redis (or compatible add-on) |
 
 ### Environment variables
 
 | Variable | Notes |
 |----------|--------|
-| **`REDIS_URL`** | Redis connection string — **required on both the API and the worker**. Same value on both services. |
+| **`REDIS_URL`** | Redis connection string — **required** for the API and for `rq worker` (same value in a split setup; one env in a single-container deploy). |
 
 If `REDIS_URL` is missing on either service, uploads may fail to enqueue or jobs may never run.
 
@@ -120,8 +118,8 @@ redis-server
 # Terminal 2 — API
 uvicorn backend.app:app --reload --port 8000
 
-# Terminal 3 — Worker (from repository root; uses `REDIS_URL` or defaults to localhost)
-python -m backend.rq_render_worker
+# Terminal 3 — Worker (from repository root; same queue as production)
+rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
 
 # Terminal 4 — Frontend (optional)
 cd frontend && npm run dev

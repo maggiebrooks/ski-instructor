@@ -7,9 +7,9 @@ The backend runs on FastAPI with Redis Queue (RQ) for async processing.
 **Start the backend:**
 
 ```bash
-redis-server                                  # Redis (required for job queue)
-rq worker ski-pipeline                         # Background worker
-uvicorn backend.app:app --reload --port 8000   # API server
+redis-server                                                                  # Redis (required for job queue)
+rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"          # Background worker (one process only)
+uvicorn backend.app:app --reload --port 8000                                  # API server
 ```
 
 ### Health Check

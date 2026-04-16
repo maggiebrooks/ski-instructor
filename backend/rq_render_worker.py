@@ -1,14 +1,20 @@
 """
-RQ worker process for production (Render, Docker).
+Optional programmatic RQ worker (same Redis + queue as production).
 
-Listens on the same queue as upload enqueues: ``ski-pipeline``.
-The pipeline job function lives in ``backend.worker.run_pipeline``.
+**Prefer starting the worker via the shell** so only one worker runs:
+``rq worker ski-pipeline --url \"$REDIS_URL\"`` (see ``backend/start.sh`` or
+``Procfile``). Do not run this module together with ``start.sh`` or you will
+have duplicate workers.
 
-Run:
+Listens on queue ``ski-pipeline``. Jobs call ``backend.worker.run_pipeline``.
+
+CLI equivalent::
+
+    rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
+
+Legacy::
+
     python -m backend.rq_render_worker
-
-Equivalent CLI (RQ 2.x):
-    rq worker ski-pipeline --url \"$REDIS_URL\"
 """
 
 from __future__ import annotations

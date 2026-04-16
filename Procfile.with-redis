@@ -1,5 +1,5 @@
 # Use when Redis is NOT already running: honcho -f Procfile.with-redis start
 redis: redis-server
 api: uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
-worker: python -m backend.rq_render_worker
+worker: rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
 web: npm run dev --prefix frontend
