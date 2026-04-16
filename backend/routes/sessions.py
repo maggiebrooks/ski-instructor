@@ -103,9 +103,18 @@ def list_sessions():
     """Return a summary list of all completed sessions."""
     sessions = []
     if not PROCESSED_DIR.exists():
+        logger.warning("list_sessions: PROCESSED_DIR does not exist: %s", PROCESSED_DIR)
         return sessions
 
-    for session_dir in sorted(PROCESSED_DIR.iterdir()):
+    entries = list(PROCESSED_DIR.iterdir())
+    logger.info(
+        "list_sessions: PROCESSED_DIR=%s, entries=%d, names=%s",
+        PROCESSED_DIR,
+        len(entries),
+        [e.name for e in entries[:20]],
+    )
+
+    for session_dir in sorted(entries):
         if not session_dir.is_dir():
             continue
         report_path = session_dir / "report.json"
@@ -128,6 +137,32 @@ def list_sessions():
 
     sessions.sort(key=lambda s: s["created_at"], reverse=True)
     return sessions
+
+
+@router.get("/debug/paths")
+def debug_paths():
+    """Temporary debug: show resolved storage paths and what's on disk."""
+    import os
+    result = {
+        "PROCESSED_DIR": str(PROCESSED_DIR),
+        "PROCESSED_DIR_exists": PROCESSED_DIR.exists(),
+        "RAW_DIR": str(RAW_DIR),
+        "RAW_DIR_exists": RAW_DIR.exists(),
+        "PLOTS_DIR": str(PLOTS_DIR),
+        "cwd": os.getcwd(),
+    }
+    if PROCESSED_DIR.exists():
+        result["processed_entries"] = [
+            {
+                "name": e.name,
+                "is_dir": e.is_dir(),
+                "has_report": (e / "report.json").exists() if e.is_dir() else False,
+            }
+            for e in sorted(PROCESSED_DIR.iterdir())
+        ]
+    if RAW_DIR.exists():
+        result["raw_entries"] = [e.name for e in sorted(RAW_DIR.iterdir())[:20]]
+    return result
 
 
 @router.get("/session/{session_id}/plot/{plot_name}")
