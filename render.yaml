@@ -5,14 +5,7 @@
 
 services:
   - type: web
-    name: ski-ai-api
+    name: ski-ai
     runtime: docker
     dockerfilePath: backend/Dockerfile
     dockerContext: .
-
-  - type: worker
-    name: ski-ai-worker
-    runtime: docker
-    dockerfilePath: backend/Dockerfile
-    dockerContext: .
-    dockerCommand: python -m backend.rq_render_worker

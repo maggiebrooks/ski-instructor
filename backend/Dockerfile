@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-prod.txt
 
 # Monorepo packages required by API + RQ worker pipeline
 COPY backend/ ./backend/
+RUN chmod +x backend/start.sh
 COPY ski/ ./ski/
 COPY data/ ./data/
 COPY features/ ./features/
@@ -29,4 +30,4 @@ COPY transformations/ ./transformations/
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD ["sh", "backend/start.sh"]
