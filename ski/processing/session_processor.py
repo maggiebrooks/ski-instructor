@@ -116,11 +116,13 @@ class SessionProcessor:
         for r in run_results:
             radius_str = (f"{r['avg_turn_radius_m']:.0f}m"
                           if r.get("avg_turn_radius_m") else "n/a")
+            vert = r.get("vertical_drop_m")
+            vert_str = f"{vert:5.1f}m" if vert is not None else "  n/a"
             logger.info(
-                "  Run %2d: %3d turns, %6.1fs, vert %5.1fm, "
+                "  Run %2d: %3d turns, %6.1fs, vert %s, "
                 "max %.1f km/h, avg radius %s, L/R %d/%d",
                 r["run_id"], r["num_turns"], r["duration_s"],
-                r["vertical_drop_m"], r["max_speed_kmh"], radius_str,
+                vert_str, r["max_speed_kmh"], radius_str,
                 r.get("turns_left", 0), r.get("turns_right", 0),
             )
 

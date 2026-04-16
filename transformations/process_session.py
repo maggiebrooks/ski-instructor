@@ -421,7 +421,11 @@ def compute_session_summary(df, run_results, sample_rate=20, output_path=None):
 
     total_turns = sum(r["num_turns"] for r in run_results)
     run_durations = [r["duration_s"] for r in run_results]
-    vert_drops = [r["vertical_drop_m"] for r in run_results]
+    # vertical_drop_m may be None when no altitude sensors were present
+    vert_drops = [
+        v for v in (r.get("vertical_drop_m") for r in run_results)
+        if v is not None
+    ]
 
     # Collect all per-turn metrics across runs for session-level aggregates
     all_turns = [t for r in run_results for t in r.get("per_turn", [])]
