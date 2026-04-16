@@ -1,10 +1,12 @@
 """Upload endpoint: accept a Sensor Logger ZIP and enqueue pipeline job."""
 
 import hashlib
-import shutil
-import zipfile
 import io
 import logging
+import os
+import shutil
+import time
+import zipfile
 from pathlib import Path
 from uuid import uuid4
 
@@ -43,6 +45,27 @@ def _flatten_single_top_level(session_dir: Path) -> None:
     inner.rmdir()
 
 
+def _fsync_extracted_tree(session_dir: Path) -> None:
+    """Best-effort fsync so extracted files are visible to the worker (container / slow FS)."""
+    try:
+        root = session_dir.resolve()
+    except OSError:
+        return
+    if not root.is_dir():
+        return
+    paths = [root, *root.rglob("*")]
+    for path in paths:
+        try:
+            if path.is_file() or path.is_dir():
+                fd = os.open(str(path), os.O_RDONLY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+        except OSError:
+            logger.debug("fsync skipped for %s", path, exc_info=True)
+
+
 @router.post("/upload-session")
 async def upload_session(file: UploadFile):
     contents = await file.read()
@@ -78,11 +101,21 @@ async def upload_session(file: UploadFile):
         zf.extractall(session_dir)
         _flatten_single_top_level(session_dir)
 
+    _fsync_extracted_tree(session_dir)
+
     logger.info("Uploaded session %s (%d bytes, hash=%s)", session_id, len(contents), session_hash[:12])
 
     create_job(session_id, session_hash=session_hash)
 
     try:
+        if not session_dir.exists():
+            logger.error("Session dir missing before enqueue: %s", session_dir)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Session dir missing before enqueue: {session_dir}",
+            )
+        # Pragmatic barrier: container FS + large ZIP extraction can lag visibility to the worker.
+        time.sleep(1)
         queue = _get_queue()
         queue.enqueue("backend.worker.run_pipeline", session_id)
     except redis.exceptions.RedisError as e:
