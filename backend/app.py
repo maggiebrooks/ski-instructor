@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import PLOTS_DIR, PROCESSED_DIR, RAW_DIR
+from backend.config import BASE_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.routes import metadata, sessions, upload
 
 
@@ -31,20 +31,19 @@ def _init_deployment_logging() -> None:
         logging.getLogger("redis").setLevel(logging.WARNING)
         logging.getLogger("rq").setLevel(logging.INFO)
     else:
-        Path("logs").mkdir(exist_ok=True)
+        log_dir = BASE_DIR / "logs"
+        log_dir.mkdir(exist_ok=True)
         logging.basicConfig(
             level=level,
             format=fmt,
-            filename="logs/api.log",
+            filename=str(log_dir / "api.log"),
             force=True,
         )
 
 
 _init_deployment_logging()
 
-# Local disk layout (Docker / Render: ephemeral unless you attach a disk)
-for _dir in (RAW_DIR, PROCESSED_DIR, PLOTS_DIR, Path("data"), Path("logs")):
-    _dir.mkdir(parents=True, exist_ok=True)
+# config.py already creates RAW_DIR, PROCESSED_DIR, PLOTS_DIR, data/, logs/ on import.
 
 
 @asynccontextmanager

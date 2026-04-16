@@ -5,14 +5,14 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from backend.config import RAW_DIR
+from backend.config import BASE_DIR, RAW_DIR
 from ski.metadata.metadata_loader import MetadataLoader
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-DATA_DIR = Path("data").resolve()
+DATA_DIR = (BASE_DIR / "data").resolve()
 
 
 @router.get("/session/{session_id}/metadata")

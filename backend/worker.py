@@ -5,16 +5,12 @@ import json
 import logging
 from pathlib import Path
 
-from backend.config import PLOTS_DIR, PROCESSED_DIR, RAW_DIR
+from backend.config import BASE_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.models import update_job
 from backend.storage import get_path, write_bytes
 
-# Ensure layout exists when worker runs as a separate process (Docker / Render).
-for _dir in (RAW_DIR, PROCESSED_DIR, PLOTS_DIR, Path("data"), Path("logs")):
-    _dir.mkdir(parents=True, exist_ok=True)
-
-_LOG_DIR = Path("logs")
-_LOG_DIR.mkdir(exist_ok=True)
+_LOG_DIR = BASE_DIR / "logs"
+_LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 _handler = logging.FileHandler(_LOG_DIR / "worker.log")
 _handler.setFormatter(
@@ -25,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(_handler)
 
-DB_PATH = str(Path("data/ski.db").resolve())
+DB_PATH = str((BASE_DIR / "data" / "ski.db").resolve())
 
 SKIP_PREFIXES = ("__MACOSX", ".")
 

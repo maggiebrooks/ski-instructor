@@ -5,7 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-DB_PATH = str(Path("data/ski.db").resolve())
+from backend.config import BASE_DIR
+
+DB_PATH = str((BASE_DIR / "data" / "ski.db").resolve())
 
 
 def _get_conn(db_path: str | None = None) -> sqlite3.Connection:
