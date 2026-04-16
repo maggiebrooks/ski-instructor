@@ -15,14 +15,14 @@ const LEGACY_STAGE_MAP: Record<string, (typeof ORDERED_STAGES)[number]> = {
 }
 
 const progressMap: Record<string, string> = {
-  queued: 'Queued…',
-  parsing_sensor_data: 'Reading sensor data…',
-  running_pipeline: 'Analyzing your skiing…',
-  generating_report: 'Generating insights…',
-  generating_plots: 'Generating visuals…',
-  complete: 'Done!',
-  processing: 'Reading sensor data…',
-  analyzing: 'Generating insights…',
+  queued: 'Upload received',
+  parsing_sensor_data: 'Reading your ski data',
+  running_pipeline: 'Analyzing your turns',
+  generating_report: 'Building your insights',
+  generating_plots: 'Creating visuals',
+  complete: 'Done 🎉',
+  processing: 'Reading your ski data',
+  analyzing: 'Building your insights',
 }
 
 function canonicalStage(stage: string): string {

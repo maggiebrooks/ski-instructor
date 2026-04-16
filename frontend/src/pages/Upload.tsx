@@ -38,7 +38,7 @@ export default function Upload() {
 
     try {
       const res = await uploadSession(file)
-      navigate(`/session/${res.session_id}`)
+      navigate(`/session/${res.session_id}`, { state: { fromUpload: true } })
     } catch (err) {
       setError(formatUploadError(err))
     } finally {

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { deleteSession, getSession } from '../api'
 import Progress from '../components/Progress'
@@ -54,6 +54,10 @@ interface SessionData {
 export default function Session() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const fromUpload = Boolean(
+    (location.state as { fromUpload?: boolean } | null)?.fromUpload,
+  )
   const [data, setData] = useState<SessionData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -141,7 +145,35 @@ export default function Session() {
   }
 
   if (!data) {
-    return <div style={{ padding: 40 }}>Loading...</div>
+    return (
+      <div style={{ padding: 40, maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/sessions">&larr; All sessions</Link>
+          {' · '}
+          <Link to="/">New upload</Link>
+        </div>
+        {fromUpload ? (
+          <>
+            <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+              Upload received ✓
+            </p>
+            <p style={{ color: '#444', marginBottom: 16 }}>Starting analysis…</p>
+          </>
+        ) : (
+          <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
+            Processing your ski session…
+          </h2>
+        )}
+        <p style={{ color: '#555', lineHeight: 1.5, marginBottom: 16 }}>
+          This may take ~1–5 minutes depending on file size. Larger recordings can take longer.
+        </p>
+        {!fromUpload && (
+          <p style={{ color: '#888', fontSize: 14 }}>
+            Hang tight — we&apos;re fetching your session status.
+          </p>
+        )}
+      </div>
+    )
   }
 
   if (data.status === 'error') {
@@ -179,7 +211,12 @@ export default function Session() {
           {' · '}
           <Link to="/">New upload</Link>
         </div>
-        <h2>Processing Session</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>
+          Working on your session
+        </h2>
+        <p style={{ color: '#666', marginBottom: 8 }}>
+          This may take a few minutes for large files.
+        </p>
         <Progress stage={data.progress} />
       </div>
     )
