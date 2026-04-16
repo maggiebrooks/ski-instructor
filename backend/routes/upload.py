@@ -103,7 +103,13 @@ async def upload_session(file: UploadFile):
 
     _fsync_extracted_tree(session_dir)
 
-    logger.info("Uploaded session %s (%d bytes, hash=%s)", session_id, len(contents), session_hash[:12])
+    logger.info(
+        "Uploaded session %s -> %s (%d bytes, hash=%s)",
+        session_id,
+        session_dir.resolve(),
+        len(contents),
+        session_hash[:12],
+    )
 
     create_job(session_id, session_hash=session_hash)
 

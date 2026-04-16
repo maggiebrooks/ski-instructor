@@ -11,13 +11,13 @@ from pathlib import Path
 
 import sqlite3
 
-from backend.config import BASE_DIR
+from backend.config import DATA_DIR
 from backend.contracts.schemas import ValidationResult
 from backend.storage import BUCKETS
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = str((BASE_DIR / "data" / "ski.db").resolve())
+DB_PATH = str((DATA_DIR / "ski.db").resolve())
 
 
 def validate_session_outputs(session_id: str) -> ValidationResult:

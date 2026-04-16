@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from backend.config import PLOTS_DIR, PROCESSED_DIR, RAW_DIR
+from backend.config import PERSISTENT_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.models import DB_PATH, delete_session_records, get_job
 
 logger = logging.getLogger(__name__)
@@ -144,6 +144,8 @@ def debug_paths():
     """Temporary debug: show resolved storage paths and what's on disk."""
     import os
     result = {
+        "PERSISTENT_DIR": str(PERSISTENT_DIR),
+        "PERSISTENT_DIR_exists": PERSISTENT_DIR.exists(),
         "PROCESSED_DIR": str(PROCESSED_DIR),
         "PROCESSED_DIR_exists": PROCESSED_DIR.exists(),
         "RAW_DIR": str(RAW_DIR),

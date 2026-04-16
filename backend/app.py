@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import BASE_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
+from backend.config import LOGS_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.routes import metadata, sessions, upload
 
 
@@ -31,12 +31,10 @@ def _init_deployment_logging() -> None:
         logging.getLogger("redis").setLevel(logging.WARNING)
         logging.getLogger("rq").setLevel(logging.INFO)
     else:
-        log_dir = BASE_DIR / "logs"
-        log_dir.mkdir(exist_ok=True)
         logging.basicConfig(
             level=level,
             format=fmt,
-            filename=str(log_dir / "api.log"),
+            filename=str(LOGS_DIR / "api.log"),
             force=True,
         )
 

@@ -106,8 +106,14 @@ This project uses **[Railway](https://railway.app/)** for the backend API, backg
 | Variable | Notes |
 |----------|--------|
 | **`REDIS_URL`** | Redis connection string — **required** for the API and for `rq worker` (same value in a split setup; one env in a single-container deploy). |
+| **`PERSISTENT_DIR`** | Optional. Mount a Railway Volume (e.g. at `/persist`) and set `PERSISTENT_DIR=/persist` so sessions, SQLite, and logs survive deploys. Defaults to the app root (`/app` in Docker). |
+| **`RAW_DIR`**, **`PROCESSED_DIR`**, **`PLOTS_DIR`** | Override only if you need non-default layout; normally derive from `PERSISTENT_DIR`. |
 
 If `REDIS_URL` is missing on either service, uploads may fail to enqueue or jobs may never run.
+
+### Scaling (important)
+
+File-based uploads live on **local disk** inside the service. **Use exactly one replica** for the combined API+worker service. If Railway (or another host) runs multiple instances, `POST /upload-session` may write files on instance A while the background worker on instance B runs the job — you will see `Raw session directory missing` in worker logs. Fix: set replicas to **1**, or move raw storage to object storage (S3/R2) and read from there in the worker.
 
 ### Running locally
 

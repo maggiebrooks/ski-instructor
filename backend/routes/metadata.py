@@ -5,14 +5,14 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from backend.config import BASE_DIR, RAW_DIR
+from backend.config import DATA_DIR, RAW_DIR
 from ski.metadata.metadata_loader import MetadataLoader
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-DATA_DIR = (BASE_DIR / "data").resolve()
+_DATA_DIR = DATA_DIR.resolve()
 
 
 @router.get("/session/{session_id}/metadata")
@@ -22,8 +22,8 @@ def get_metadata(session_id: str):
 
     # Try uploaded sessions first, then legacy data/ sessions
     session_meta = loader.load_session_metadata(RAW_DIR / session_id)
-    if session_meta is None and DATA_DIR.is_dir():
-        for d in DATA_DIR.iterdir():
+    if session_meta is None and _DATA_DIR.is_dir():
+        for d in _DATA_DIR.iterdir():
             if d.is_dir() and session_id in d.name:
                 session_meta = loader.load_session_metadata(d)
                 if session_meta:

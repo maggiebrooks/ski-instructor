@@ -5,12 +5,11 @@ import json
 import logging
 from pathlib import Path
 
-from backend.config import BASE_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
+from backend.config import DATA_DIR, LOGS_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.models import update_job
 from backend.storage import get_path, write_bytes
 
-_LOG_DIR = BASE_DIR / "logs"
-_LOG_DIR.mkdir(parents=True, exist_ok=True)
+_LOG_DIR = LOGS_DIR
 
 _handler = logging.FileHandler(_LOG_DIR / "worker.log")
 _handler.setFormatter(
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(_handler)
 
-DB_PATH = str((BASE_DIR / "data" / "ski.db").resolve())
+DB_PATH = str((DATA_DIR / "ski.db").resolve())
 
 SKIP_PREFIXES = ("__MACOSX", ".")
 
@@ -62,6 +61,19 @@ def run_pipeline(session_id: str) -> dict:
         from ski.analysis.turn_signature import plot_session_signature
 
         session_dir = RAW_DIR / session_id
+        if not session_dir.is_dir():
+            # Upload and worker must share the same filesystem. Redis is global;
+            # disk is not — if Railway (or any host) runs >1 replica, the HTTP
+            # upload hits instance A's disk while the RQ worker on instance B
+            # looks here and finds nothing.
+            err = (
+                f"Raw session directory missing: {session_dir} (RAW_DIR={RAW_DIR}). "
+                "If uploads succeed but jobs fail, set this service to 1 replica "
+                "(Railway: Settings → Scaling), or use shared/object storage for raw files."
+            )
+            logger.error(err)
+            raise RuntimeError(err) from None
+
         raw_path = _resolve_raw_path(session_dir)
 
         # --- 1. Pre-pipeline validation (fail early if invalid) ---
