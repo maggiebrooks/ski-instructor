@@ -250,8 +250,12 @@ class TurnInsights:
         dict
             ``normalized_turn_radius``  – median radius / ski length (m).
                 ``None`` when ski length metadata is missing.
-            ``pressure_ratio``  – median(measured_g / expected_centripetal_g).
-                ~1.0 = efficient carving, <0.6 = skidding, >1.2 = aggressive.
+            ``pressure_ratio``  – median(measured_g / expected_centripetal_g)
+                with expected_g = v²/(r·g).  Unity is the ideal anchor for a
+                consistent (v, r) pair; zone labels in UI copy are provisional
+                (see docs/algorithm-spec.md §3.1 — skidding can raise or lower
+                the ratio depending on how ``pelvis_estimated_turn_radius``
+                relates to true path radius and on ``accel_mag`` vs. lateral).
             ``torso_rotation_ratio``  – median((ang_vel * dur) / |turn_angle|).
                 <0.3 = stable upper body, >0.7 = upper-body steering.
         """

@@ -219,7 +219,43 @@ comparison.
 
 ## What's Next
 
-Per the two-week launch plan (`docs/two-week-launch-plan.md`):
+### Algorithm tightening (six-month window before next winter)
+
+The April 2026 research synthesis converted the nine PDFs in
+[`research/`](../research/) into three living documents that drive the
+next six months of algorithm work:
+
+- [`docs/research/literature-synthesis.md`](research/literature-synthesis.md)
+  — academic, paper-by-paper extract plus the cross-paper consensus on
+  filter cutoffs, fusion algorithms, coordinate frames, and what
+  smartphone GNSS can and cannot do.
+- [`docs/research/algorithm-implications.md`](research/algorithm-implications.md)
+  — engineering decisions grouped by pipeline layer, each tagged
+  `[adopt]`, `[document-as-assumption]`, `[future-work]`, or
+  `[do-not-claim]`.
+- [`docs/algorithm-spec.md`](algorithm-spec.md) — the assumptions
+  ledger: every coordinate frame, parameter, and "good" threshold in
+  the code with its file/line citation, source, and validation status.
+  Update this file in the same commit as any numeric change.
+
+**Shipped:** IMU preprocessing now uses a **4th-order** Butterworth
+low-pass at **5 Hz** in `transformations/process_session.py` (Elfmark
+et al. 2021 alignment); run `python -m pytest tests/` after any further
+filter changes.
+
+Before that session, a **desk physics pass** (centripetal
+\(g_{\text{expected}} = v^2/(r g_0)\), unity anchor for
+`pressure_ratio`, documented in `algorithm-implications` §6) should
+replace the invented 0.6 / 0.8 / 1.2 cutoffs with ranges derived from
+\(F = mv^2/r\). The intentional-error on-snow validation session (10
+runs with deliberate backseat / banking / skidding, planned for next
+winter) then **tunes** those physics-anchored bands and is the main
+event that can retire the `proxy` tags in the spec.
+
+### Frontend / deployment (legacy two-week plan)
+
+Per the original launch plan (`docs/two-week-launch-plan.md` —
+referenced but not yet committed):
 
 - **Day 7:** Polish the upload page (drag-and-drop, mobile-friendly, session history)
 - **Day 8-9:** Results dashboard (score cards, GPS map, detailed metrics)

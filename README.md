@@ -16,31 +16,38 @@ comparison. Processing version 2.0.0.
 
 ### Run the full stack (development)
 
-```bash
-# Prerequisites: Python 3.12+, Node.js 18+, Redis
+**One command** (from repo root; uses `venv/bin/honcho`, starts Redis only if
+nothing is already on `127.0.0.1:6379`):
 
-# From repository root — activate the virtualenv you already use, e.g.:
-#   source venv/bin/activate
-#   source .venv/bin/activate
-# (Windows: venv\Scripts\activate). Create one first only if you do not have one:
-#   python3 -m venv venv
+```bash
+./scripts/dev.sh
+```
+
+If you prefer not to use the script: with Redis already running,
+`./venv/bin/honcho start`; if Redis is not running,
+`./venv/bin/honcho -f Procfile.with-redis start`.
+
+---
+
+First-time setup (still one-time):
+
+```bash
+# Prerequisites: Python 3.12+, Node.js 18+, Redis (or let Procfile.with-redis start it)
+
+# From repository root — virtualenv for this repo:
+#   python3 -m venv venv   # only if venv/ does not exist yet
 
 # Install Python deps
-python -m pip install -r requirements.txt
-python -m pip install fastapi uvicorn redis rq python-multipart honcho
+python3 -m pip install -r requirements.txt
+python3 -m pip install fastapi uvicorn redis rq python-multipart honcho
 
 # Install frontend deps
 cd frontend && npm install && cd ..
+```
 
-# Start everything — pick one:
+**Manual multi-terminal** (equivalent to what Honcho runs):
 
-# Option A — one terminal (Honcho runs API + worker + Vite; venv must be active)
-# Requires Redis on localhost:6379 (often already running via Homebrew/Docker).
-honcho start
-# If you see "Address already in use" for 6379, Redis is already up — use `honcho start` only (default Procfile).
-# If Redis is not running and port 6379 is free: honcho -f Procfile.with-redis start
-
-# Option B — four terminals (activate your venv in each that runs Python)
+```bash
 # Skip redis-server if Redis is already running on 6379.
 redis-server
 rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
@@ -48,11 +55,7 @@ uvicorn backend.app:app --reload --port 8000
 cd frontend && npm run dev
 ```
 
-From the **repository root**, with your usual virtualenv activated (so `python`,
-`pip`, and `honcho` resolve inside that env). If you skip activation, call
-`venv/bin/python` and `venv/bin/honcho` using **your** venv directory name.
-Install `frontend` dependencies once (`cd frontend && npm install`). Honcho
-reads [`Procfile`](Procfile) (API, RQ worker, Vite). Redis is started separately unless you use [`Procfile.with-redis`](Procfile.with-redis).
+[`Procfile`](Procfile) runs API + worker + Vite; [`Procfile.with-redis`](Procfile.with-redis) adds `redis-server` when the dev script detects nothing on port 6379.
 
 Open `http://localhost:5173`. API docs: `http://localhost:8000/api/docs`.
 Upload a Sensor Logger `.zip` and watch the results appear.

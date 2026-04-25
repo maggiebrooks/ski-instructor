@@ -101,7 +101,8 @@ class TestInputValidation:
     def test_extreme_accel_fails(self, tmp_path):
         _write_valid_session(tmp_path)
         df = pd.read_csv(tmp_path / "Accelerometer.csv")
-        df.loc[0, "x"] = 60.0
+        # Must exceed backend.validation.input_validator.ACCEL_BOUND (250 m/s²)
+        df.loc[0, "x"] = 300.0
         df.to_csv(tmp_path / "Accelerometer.csv", index=False)
         with pytest.raises(ValueError, match="exceeds"):
             validate_raw_session(tmp_path)

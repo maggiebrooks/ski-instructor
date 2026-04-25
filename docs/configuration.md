@@ -11,7 +11,7 @@ external config file yet.
 |-----------|---------|----------|-------------|
 | `source_hz` | `100` | `preprocess()` | Input sample rate from Sensor Logger |
 | `cutoff` | `5.0` | `preprocess()` | Butterworth LP cutoff frequency (Hz) |
-| `order` | `2` | `preprocess()` | Butterworth filter order |
+| `order` | `4` | `preprocess()` | Butterworth filter order (matches Elfmark et al. 2021) |
 | `target_hz` | `20` | `preprocess()` | Output sample rate after downsampling |
 
 ### Segmentation Parameters

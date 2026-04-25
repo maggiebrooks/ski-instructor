@@ -156,8 +156,14 @@ def discover_sessions(data_dir):
 # 2. Preprocessing
 # ---------------------------------------------------------------------------
 
-def preprocess(df, source_hz=100, cutoff=5.0, order=2, target_hz=20):
-    """Timestamp normalisation, Butterworth low-pass filter, down-sample."""
+def preprocess(df, source_hz=100, cutoff=5.0, order=4, target_hz=20):
+    """Timestamp normalisation, Butterworth low-pass filter, down-sample.
+
+    IMU axes are filtered with a *order*-th order zero-phase Butterworth
+    low-pass at *cutoff* Hz (``sosfiltfilt``).  Order 4 matches Elfmark
+    et al. 2021 (*Sensors*), who use a 4th-order zero-phase Butterworth
+    at fc = 5 Hz before differentiating position for velocity / acceleration.
+    """
     df = df.copy()
 
     df["timestamp"] = pd.to_datetime(df["time"], unit="ns")

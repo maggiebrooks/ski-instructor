@@ -1,5 +1,7 @@
 # Use when Redis is NOT already running: honcho -f Procfile.with-redis start
+# Worker waits for Redis — Honcho starts all processes at once, so rq would
+# otherwise race redis-server before it binds to 6379.
 redis: redis-server
 api: uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
-worker: rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
+worker: bash scripts/wait-for-redis.sh && rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
 web: npm run dev --prefix frontend

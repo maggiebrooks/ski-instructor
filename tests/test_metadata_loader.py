@@ -138,6 +138,14 @@ class TestRealProfiles:
         assert profile is not None
         assert profile["ski_id"] == "sheeva10_104_158"
 
+    @pytest.mark.skipif(
+        not (
+            Path(__file__).resolve().parents[1]
+            / "data"
+            / "Aspen_Highlands-2026-02-26_16-52-11"
+        ).is_dir(),
+        reason="Example session directory not present in this checkout",
+    )
     def test_real_session_metadata(self):
         session_path = (
             Path(__file__).resolve().parents[1]

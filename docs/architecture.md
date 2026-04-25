@@ -39,7 +39,7 @@ single reusable method call.
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     2. PREPROCESSING                                │
 │                                                                     │
-│   Timestamp normalization  →  Butterworth LP filter (5 Hz, order 2) │
+│   Timestamp normalization  →  Butterworth LP filter (5 Hz, order 4) │
 │   →  Downsample 100 Hz → 20 Hz                                     │
 └────────────────────────────────────┬────────────────────────────────┘
                                      │
