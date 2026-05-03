@@ -77,8 +77,8 @@ measured by the gyroscope z-axis.
 | \(\text{gyro}_z\) | Gyroscope z-axis reading | rad/s |
 
 **Source:** Direct MEMS gyroscope measurement. The z-axis of the
-phone mounted on the pelvis (belly pocket) approximates the
-body's yaw rotation axis during skiing.
+phone mounted near the pelvis (front thigh pocket / thigh strap)
+approximates the body's yaw rotation axis during skiing.
 
 **Assumptions:**
 - Phone orientation is approximately stable in the pocket, with the

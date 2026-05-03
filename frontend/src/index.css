@@ -10,6 +10,10 @@ body {
   color: #222;
   background: #f8f9fa;
   -webkit-font-smoothing: antialiased;
+  /* Ensure users can highlight + copy text (some browsers/extensions inject
+     `user-select: none` rules; this forces the default back to selectable). */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 a {

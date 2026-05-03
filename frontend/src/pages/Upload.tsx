@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { uploadSession } from '../api'
 import { AxiosError } from 'axios'
+
+import DemoModeBanner from '../components/DemoModeBanner'
+import { uploadSession } from '../api'
 
 function formatUploadError(err: unknown): string {
   if (err instanceof Error && !('isAxiosError' in err)) {
@@ -48,6 +50,7 @@ export default function Upload() {
 
   return (
     <div style={{ padding: 40, maxWidth: 480, margin: '0 auto' }}>
+      <DemoModeBanner />
       <p style={{ marginBottom: 16 }}>
         <Link to="/sessions">View past sessions</Link>
       </p>

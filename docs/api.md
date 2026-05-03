@@ -2,7 +2,12 @@
 
 ## HTTP Endpoints (FastAPI)
 
-The backend runs on FastAPI with Redis Queue (RQ) for async processing.
+This doc is intentionally **endpoints only**.
+
+For architecture and pipeline details, see:
+- [`docs/architecture.md`](architecture.md)
+- [`docs/MASTER_PLAN.md`](MASTER_PLAN.md)
+- [`docs/configuration.md`](configuration.md) (env vars)
 
 **Start the backend:**
 
@@ -31,12 +36,13 @@ Content-Type: multipart/form-data
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file` | file | Sensor Logger `.zip` export (max 200 MB) |
+| `file` | file | Session ZIP upload (see [`docs/data.md`](data.md)) |
 
 **Validation:**
 - Must be a valid ZIP archive (400 if not)
 - Must contain `Accelerometer.csv` and `Gyroscope.csv` (400 if missing)
 - Must not exceed `MAX_UPLOAD_MB` (413 if too large)
+- May be rejected by **preflight gates** (400) before enqueue based on duration/row-count limits (see `PREFLIGHT_*` env vars).
 
 **Duplicate detection:** The ZIP contents are SHA-256 hashed. If the same
 data was uploaded before and the previous job is processing or complete, the
@@ -47,6 +53,13 @@ response returns the existing session instead of creating a new one.
 ```json
 { "session_id": "a1b2c3...", "status": "processing" }
 ```
+
+The response may also include optional fields when available:
+
+- `preflight_status`: `"accept"` or `"flag"` (still accepted, but borderline)
+- `warnings`: array of warning strings (upload accepted)
+- `duration_s`: approximate duration in seconds
+- `approx_hz`: approximate IMU sample rate
 
 **Duplicate response:**
 
@@ -160,130 +173,3 @@ session directory. Resolves linked skier and ski profiles from YAML.
 ```
 
 Returns `{}` if no metadata exists.
-
----
-
-## Configuration (`backend/config.py`)
-
-All values can be overridden with environment variables.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `STORAGE_MODE` | `"local"` | `"local"` or `"s3"` (S3 not yet wired) |
-| `RAW_DIR` | `sessions/raw` | Uploaded session files |
-| `PROCESSED_DIR` | `sessions/processed` | Pipeline output (report.json, CSVs) |
-| `PLOTS_DIR` | `sessions/plots` | Generated plot PNGs |
-| `DATABASE_URL` | `sqlite:///data/ski.db` | SQLite database |
-| `REDIS_URL` | `redis://localhost:6379` | Redis for RQ job queue |
-| `MAX_UPLOAD_MB` | `200` | Maximum upload file size |
-
----
-
-## Storage Layer (`backend/storage.py`)
-
-Abstraction over local filesystem. All artifact writes go through this
-module so the internals can later be swapped for S3/boto3 without changing
-callers.
-
-```python
-from backend.storage import get_path, write_bytes, read_path
-
-get_path("session_id", "plots")                     # -> Path to session dir
-get_path("session_id", "plots", "signature.png")    # -> Path to specific file
-write_bytes("session_id", "processed", "report.json", data)  # Write bytes
-read_path("session_id", "raw", "Accelerometer.csv") # Get path for reading
-```
-
-Raises `ValueError` on invalid bucket names (`raw`, `processed`, `plots`
-are the valid buckets).
-
----
-
-## Job Tracking (`backend/models.py`)
-
-SQLite `jobs` table tracks upload-to-completion lifecycle.
-
-```python
-from backend.models import create_job, get_job, update_job, lookup_by_hash
-
-job_id = create_job("session_id", session_hash="sha256...")
-job = get_job("session_id")          # Most recent job for this session
-update_job("session_id", "generating_report")
-update_job("session_id", "error", error="Pipeline crashed")
-existing = lookup_by_hash("sha256...")  # Returns session_id or None
-```
-
----
-
-## Pipeline Orchestration (`ski/processing/session_processor.py`)
-
-The `SessionProcessor` class runs the full analytics pipeline.
-
-```python
-from ski.processing.session_processor import SessionProcessor
-
-processor = SessionProcessor(db_path="data/ski.db", processing_version="2.0.0")
-summary = processor.process(
-    session_id="my_session",
-    raw_path=Path("data/MySession"),
-    processed_dir=Path("sessions/processed/my_session"),
-    output_dir=Path("sessions/plots/my_session"),
-)
-```
-
-**Pipeline stages:** Ingestion -> Preprocessing -> Row features ->
-Segmentation -> Turn detection -> Feature modules -> Session summary ->
-Artifact writing -> Visualization -> SQLite persistence.
-
----
-
-## Analytics Layer (`ski/analysis/`)
-
-### TurnAnalyzer
-
-Read-only queries against the SQLite turns table.
-
-```python
-analyzer = TurnAnalyzer("data/ski.db")
-df = analyzer.load_turns(["session_id"])
-metrics = analyzer.session_metrics("session_id")
-comparison = analyzer.compare_sessions(["sess1", "sess2"])
-```
-
-### TurnInsights
-
-Biomechanical interpretation with physics-based normalization.
-
-```python
-insights = TurnInsights()
-scores = TurnInsights.compute_movement_scores(df, metadata)
-fundamentals = TurnInsights.interpret_fundamentals(scores, metadata)
-report = insights.session_report(analyzer, "session_id", metadata)
-```
-
-**Six movement scores (0-1):** rotary_stability, edge_consistency,
-pressure_management, turn_symmetry, turn_shape_consistency, turn_rhythm.
-
-**Three normalized metrics:** pressure_ratio, torso_rotation_ratio,
-normalized_turn_radius.
-
-### Turn Signature
-
-```python
-from ski.analysis.turn_signature import plot_session_signature
-fig = plot_session_signature(analyzer, "session_id", show=False)
-```
-
----
-
-## Metadata (`ski/metadata/metadata_loader.py`)
-
-```python
-loader = MetadataLoader()
-skier = loader.load_skier_profile("maggie")
-ski = loader.load_ski_profile("sheeva10_104_158")
-session_meta = loader.load_session_metadata(Path("data/MySession"))
-```
-
-Profiles are YAML files in `ski/profiles/skiers/` and `ski/profiles/skis/`.
-Per-session metadata lives in `metadata.yaml` inside each session directory.

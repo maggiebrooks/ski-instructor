@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Ski Recorder",
+    "slug": "ski-recorder",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "ski-recorder",
+    "newArchEnabled": true,
+    "backgroundColor": "#0b0d10",
+    "splash": {
+      "backgroundColor": "#0b0d10",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.skiai.recorder",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMotionUsageDescription": "Records accelerometer, gyroscope, and barometer data while you ski so the session can be analyzed.",
+        "NSLocationWhenInUseUsageDescription": "Records GPS track (latitude, longitude, altitude, speed) while you ski so turn detection and speed metrics work.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": []
+      }
+    },
+    "android": {
+      "package": "com.skiai.recorder",
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0d10"
+      },
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      "expo-sensors",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Records GPS track while you ski so turn detection and speed metrics work."
+        }
+      ]
+    ]
+  }
+}

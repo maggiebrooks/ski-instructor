@@ -14,8 +14,19 @@ import redis.exceptions
 from fastapi import APIRouter, UploadFile, HTTPException
 from rq import Queue
 
-from backend.config import RAW_DIR, MAX_UPLOAD_MB, redis_client
+from backend.config import (
+    RAW_DIR,
+    MAX_UPLOAD_MB,
+    PREFLIGHT_MAX_DURATION_S,
+    PREFLIGHT_MAX_ROWS,
+    PREFLIGHT_MIN_DURATION_S,
+    PREFLIGHT_MIN_ROWS,
+    PREFLIGHT_FLAG_MIN_DURATION_S,
+    PREFLIGHT_FLAG_MIN_ROWS,
+    redis_client,
+)
 from backend.models import create_job, lookup_by_hash
+from backend.validation.preflight import preflight_validate_session, resolve_session_root
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +114,30 @@ async def upload_session(file: UploadFile):
 
     _fsync_extracted_tree(session_dir)
 
+    # --- Preflight validation BEFORE enqueue (cheap worker-cost saver) ---
+    preflight = preflight_validate_session(
+        session_dir,
+        min_duration_s=PREFLIGHT_MIN_DURATION_S,
+        flag_min_duration_s=PREFLIGHT_FLAG_MIN_DURATION_S,
+        max_duration_s=PREFLIGHT_MAX_DURATION_S,
+        min_rows=PREFLIGHT_MIN_ROWS,
+        flag_min_rows=PREFLIGHT_FLAG_MIN_ROWS,
+        max_rows=PREFLIGHT_MAX_ROWS,
+    )
+    if not preflight.ok:
+        # Best-effort cleanup so we don't retain rejected raw data.
+        try:
+            shutil.rmtree(session_dir, ignore_errors=True)
+        except OSError:
+            logger.warning("Failed to cleanup rejected session dir: %s", session_dir, exc_info=True)
+        raise HTTPException(
+            400,
+            "Rejected upload: " + "; ".join(preflight.errors),
+        )
+
+    # Normalize raw root for downstream compatibility (some ZIPs nest one folder deep).
+    raw_root = resolve_session_root(session_dir)
+
     logger.info(
         "Uploaded session %s -> %s (%d bytes, hash=%s)",
         session_id,
@@ -114,7 +149,7 @@ async def upload_session(file: UploadFile):
     create_job(session_id, session_hash=session_hash)
 
     try:
-        if not session_dir.exists():
+        if not raw_root.exists():
             logger.error("Session dir missing before enqueue: %s", session_dir)
             raise HTTPException(
                 status_code=500,
@@ -131,4 +166,11 @@ async def upload_session(file: UploadFile):
             "Job queue unavailable. Ensure Redis is running and REDIS_URL is set.",
         ) from e
 
-    return {"session_id": session_id, "status": "processing"}
+    resp = {"session_id": session_id, "status": "processing", "preflight_status": preflight.status}
+    if preflight.warnings:
+        resp["warnings"] = preflight.warnings
+    if preflight.duration_s is not None:
+        resp["duration_s"] = round(float(preflight.duration_s), 2)
+    if preflight.approx_hz is not None:
+        resp["approx_hz"] = round(float(preflight.approx_hz), 2)
+    return resp

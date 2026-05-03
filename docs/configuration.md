@@ -1,47 +1,12 @@
 # Configuration & Output
 
-## Pipeline Parameters
+## Canonical references
 
-All pipeline parameters are function arguments with defaults. There is no
-external config file yet.
-
-### Preprocessing Parameters
-
-| Parameter | Default | Function | Description |
-|-----------|---------|----------|-------------|
-| `source_hz` | `100` | `preprocess()` | Input sample rate from Sensor Logger |
-| `cutoff` | `5.0` | `preprocess()` | Butterworth LP cutoff frequency (Hz) |
-| `order` | `4` | `preprocess()` | Butterworth filter order (matches Elfmark et al. 2021) |
-| `target_hz` | `20` | `preprocess()` | Output sample rate after downsampling |
-
-### Segmentation Parameters
-
-| Parameter | Default | Function | Description |
-|-----------|---------|----------|-------------|
-| `window_s` | `30` | `segment_runs()` | Rolling window for altitude rate (seconds) |
-| `descent_thresh` | `-0.3` | `segment_runs()` | Alt rate below this = skiing (m/s) |
-| `ascent_thresh` | `0.3` | `segment_runs()` | Alt rate above this = lift (m/s) |
-| `min_segment_s` | `30` | `segment_runs()` | Minimum segment duration before merging (s) |
-
-### Turn Detection Parameters
-
-| Parameter | Default | Function | Description |
-|-----------|---------|----------|-------------|
-| `column` | `"gyro_z"` | `detect_turns()` | Signal used for peak detection |
-| `height` | `0.5` | `detect_turns()` | Min |gyro_z| peak height (rad/s) |
-| `distance` | `20` | `detect_turns()` | Min samples between peaks (= 1 s at 20 Hz) |
-
-### Tuning Guidance
-
-- **`height`**: Increase to reduce false positives. Decrease to catch
-  gentler turns. Inspect the gyro_z panel in the output plot to calibrate.
-- **`distance`**: At 20 Hz, `distance=20` means peaks must be >= 1 second
-  apart. For faster carving, try `distance=10` (0.5 s). For longer GS-style
-  turns, try `distance=40` (2 s).
-- **`cutoff`**: 5 Hz removes high-frequency vibration while preserving turn
-  dynamics (~0.3--2 Hz). Lower values (e.g. 2 Hz) smooth more aggressively.
-- **`descent_thresh`**: -0.3 m/s was derived from the White River 2-22
-  altitude rate distribution. Adjust if ski terrain has very gradual slopes.
+- **Pipeline parameters + thresholds** live in [`docs/algorithm-spec.md`](algorithm-spec.md).
+  This includes filter `cutoff/order`, segmentation thresholds, and turn-detection
+  parameters with their validation status.
+- This doc is intentionally limited to **output artifacts** (what files exist
+  after a run) and the **summary schema**.
 
 ---
 
@@ -191,6 +156,35 @@ turns
 
 Duplicate inserts are handled via `INSERT OR REPLACE`. The database
 is additive -- JSON output is preserved alongside it.
+
+---
+
+## Upload preflight gates (before enqueue)
+
+The API runs a cheap **preflight validation** step *before* enqueueing an RQ job.
+This prevents wasting worker cycles on obviously junk uploads (too short / too long / too large).
+
+Configure via env vars (see `backend/config.py` defaults):
+
+- `PREFLIGHT_MIN_DURATION_S`
+- `PREFLIGHT_MAX_DURATION_S`
+- `PREFLIGHT_MIN_ROWS`
+- `PREFLIGHT_MAX_ROWS`
+- `PREFLIGHT_FLAG_MIN_DURATION_S` (accept-but-warn threshold)
+- `PREFLIGHT_FLAG_MIN_ROWS` (accept-but-warn threshold)
+
+### Raw retention cleanup (optional)
+
+If you want a simple raw-data lifecycle policy (raw → processed → delete), run:
+
+```bash
+python scripts/cleanup_raw_sessions.py
+```
+
+Configure via env vars:
+
+- `RAW_RETENTION_DAYS` (default `30`)
+- `RAW_DELETE_REQUIRES_PROCESSED` (default `true`)
 
 ### Example Queries
 

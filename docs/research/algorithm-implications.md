@@ -505,7 +505,7 @@ behaviour, and makes it permanent.
 
 **Today.** We do not estimate CoM at all. Every "turn radius",
 "g-force", and "edge angle" is computed from the phone's location and
-orientation, which is approximately the *belly pocket* — sternum to
+orientation, which is approximately the *thigh pocket* — sternum to
 mid-pelvis depending on jacket layout.
 
 **What the literature says.** Fasel 2016 reports the offset of the

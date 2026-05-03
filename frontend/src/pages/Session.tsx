@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { deleteSession, getSession } from '../api'
+import DemoModeBanner from '../components/DemoModeBanner'
 import Progress from '../components/Progress'
 
 /** One-off network blips should not kill polling; require several misses in a row. */
@@ -136,6 +137,7 @@ export default function Session() {
   if (error) {
     return (
       <div style={{ padding: 40 }}>
+        <DemoModeBanner />
         <p style={{ color: 'crimson' }}>{error}</p>
         <Link to="/sessions">All sessions</Link>
         {' · '}
@@ -147,6 +149,7 @@ export default function Session() {
   if (!data) {
     return (
       <div style={{ padding: 40, maxWidth: 560, margin: '0 auto' }}>
+        <DemoModeBanner />
         <div style={{ marginBottom: 16 }}>
           <Link to="/sessions">&larr; All sessions</Link>
           {' · '}
@@ -180,6 +183,7 @@ export default function Session() {
     const errMsg = (data as { error?: string }).error
     return (
       <div style={{ padding: 40 }}>
+        <DemoModeBanner />
         <h2>Processing Failed</h2>
         <p style={{ color: 'crimson' }}>
           The pipeline encountered an error. Try uploading again.
@@ -206,6 +210,7 @@ export default function Session() {
   if (data.status !== 'complete') {
     return (
       <div style={{ padding: 40 }}>
+        <DemoModeBanner />
         <div style={{ marginBottom: 16 }}>
           <Link to="/sessions">&larr; All sessions</Link>
           {' · '}
@@ -256,6 +261,7 @@ export default function Session() {
 
   return (
     <div style={{ padding: 40, maxWidth: 720, margin: '0 auto' }}>
+      <DemoModeBanner />
       <div style={{ marginBottom: 16, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <Link to="/sessions">&larr; All sessions</Link>
         <Link to="/">New upload</Link>

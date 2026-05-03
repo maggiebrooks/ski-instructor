@@ -58,6 +58,7 @@ async def _api_lifespan(_: FastAPI):
 api = FastAPI(title="ski-ai", version="2.0.0", lifespan=_api_lifespan)
 api.add_middleware(
     CORSMiddleware,
+    # TODO: restrict to production frontend origin before public launch
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],

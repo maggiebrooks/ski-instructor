@@ -111,6 +111,10 @@ This project uses **[Railway](https://railway.app/)** for the backend API, backg
 | **`REDIS_URL`** | Redis connection string — **required** for the API and for `rq worker` (same value in a split setup; one env in a single-container deploy). |
 | **`PERSISTENT_DIR`** | Optional. Mount a Railway Volume (e.g. at `/persist`) and set `PERSISTENT_DIR=/persist` so sessions, SQLite, and logs survive deploys. Defaults to the app root (`/app` in Docker). |
 | **`RAW_DIR`**, **`PROCESSED_DIR`**, **`PLOTS_DIR`** | Override only if you need non-default layout; normally derive from `PERSISTENT_DIR`. |
+| **`PREFLIGHT_MIN_DURATION_S`**, **`PREFLIGHT_MAX_DURATION_S`** | Upload preflight gates (seconds). Runs **before enqueue** to reject junk uploads early. |
+| **`PREFLIGHT_MIN_ROWS`**, **`PREFLIGHT_MAX_ROWS`** | Upload preflight gates (rows per IMU). Runs **before enqueue** to cap work and reject tiny/huge sessions. |
+| **`PREFLIGHT_FLAG_MIN_DURATION_S`**, **`PREFLIGHT_FLAG_MIN_ROWS`** | Upload preflight *accept-but-warn* thresholds. Sessions below these may return `preflight_status=flag` (still enqueued). |
+| **`RAW_RETENTION_DAYS`**, **`RAW_DELETE_REQUIRES_PROCESSED`** | Raw lifecycle cleanup knobs for `scripts/cleanup_raw_sessions.py` (optional). |
 
 If `REDIS_URL` is missing on either service, uploads may fail to enqueue or jobs may never run.
 
@@ -198,6 +202,7 @@ On Railway, open **`https://<your-api-host>/api/docs`** (e.g. `https://ski-ai-ap
 | [Vision](docs/vision.md) | Product vision, principles, why ski-ai |
 | [Data](docs/data.md) | Sensor Logger source files, output schema |
 | [Configuration](docs/configuration.md) | Pipeline parameters, database schema |
+| [Dev wins](docs/dev-wins/2026-04-28.md) | Daily changelog of notable shipped improvements |
 | [Metadata](docs/metadata.md) | Skier/ski profiles, session metadata, MetadataLoader |
 | [Testing](docs/testing.md) | Test suite overview |
 | [GitHub setup](docs/github-setup.md) | Private repo, SSH, `.gitignore`, secrets |

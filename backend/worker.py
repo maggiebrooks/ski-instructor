@@ -51,6 +51,7 @@ def run_pipeline(session_id: str) -> dict:
     processed artifacts directory for this session.
     """
     try:
+        from transformations.process_session import PROCESSING_VERSION
         from ski.processing.session_processor import SessionProcessor
         from ski.analysis.turn_analyzer import TurnAnalyzer
         from ski.analysis.turn_insights import (
@@ -59,6 +60,22 @@ def run_pipeline(session_id: str) -> dict:
             _generate_actionable_top_insight,
         )
         from ski.analysis.turn_signature import plot_session_signature
+
+        # --- 0. Idempotency / cache: if a report already exists for this version, return it ---
+        report_path = get_path(session_id, "processed", "report.json")
+        if report_path.exists():
+            try:
+                cached = json.loads(report_path.read_text())
+            except Exception:
+                cached = None
+            if isinstance(cached, dict) and cached.get("processing_version") == PROCESSING_VERSION:
+                logger.info(
+                    "Cache hit for %s (processing_version=%s) -> skipping pipeline",
+                    session_id,
+                    PROCESSING_VERSION,
+                )
+                update_job(session_id, "complete")
+                return cached
 
         session_dir = RAW_DIR / session_id
         if not session_dir.is_dir():
@@ -95,7 +112,7 @@ def run_pipeline(session_id: str) -> dict:
         logger.info("Stage: running_pipeline for %s", session_id)
 
         # --- 2. Run pipeline (unchanged) ---
-        processor = SessionProcessor(db_path=DB_PATH, processing_version="2.0.0")
+        processor = SessionProcessor(db_path=DB_PATH, processing_version=PROCESSING_VERSION)
         summary = processor.process(
             session_id=session_id,
             raw_path=raw_path,
@@ -107,7 +124,6 @@ def run_pipeline(session_id: str) -> dict:
         logger.info("Stage: generating_report for %s", session_id)
         analyzer = TurnAnalyzer(DB_PATH)
         insights_engine = TurnInsights()
-        report_lines = insights_engine.session_report(analyzer, session_id)
 
         df = analyzer.load_turns([session_id])
 
@@ -150,6 +166,11 @@ def run_pipeline(session_id: str) -> dict:
             score_confidence = "high"
 
         scores = TurnInsights.compute_movement_scores(filtered_df)
+
+        # Narrative insights and numeric scores both use filtered_df (confidence >= CONFIDENCE_THRESHOLD).
+        report_lines = insights_engine.session_report(
+            analyzer, session_id, turns_df=filtered_df
+        )
 
         metadata = {
             "scores": scores,
@@ -199,7 +220,7 @@ def run_pipeline(session_id: str) -> dict:
         report = {
             "session_id": session_id,
             "status": "complete",
-            "processing_version": "2.0.0",
+            "processing_version": PROCESSING_VERSION,
             "summary": {
                 "runs": summary.get("num_runs"),
                 "turns": summary.get("total_turns"),
@@ -252,7 +273,6 @@ def run_pipeline(session_id: str) -> dict:
 
         update_job(session_id, "complete")
         logger.info("Stage: complete for %s", session_id)
-        report_path = get_path(session_id, "processed", "report.json")
         logger.info("Pipeline complete for %s -> %s", session_id, report_path)
         return report
 

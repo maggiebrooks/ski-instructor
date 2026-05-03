@@ -37,3 +37,25 @@ redis_client = redis.from_url(REDIS_URL)
 
 # Upload limit (MB)
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "500"))
+
+# Preflight validation (before enqueue). Defaults are permissive so local dev
+# and unit tests can upload tiny synthetic sessions; tighten in production via env.
+PREFLIGHT_MIN_DURATION_S = float(os.getenv("PREFLIGHT_MIN_DURATION_S", "0"))
+PREFLIGHT_MAX_DURATION_S = float(os.getenv("PREFLIGHT_MAX_DURATION_S", str(8 * 60 * 60)))
+PREFLIGHT_MIN_ROWS = int(os.getenv("PREFLIGHT_MIN_ROWS", "10"))
+PREFLIGHT_MAX_ROWS = int(os.getenv("PREFLIGHT_MAX_ROWS", "2000000"))
+
+# "FLAG" thresholds (accept but warn) for borderline sessions. Defaults match
+# reject thresholds so behavior is unchanged unless configured.
+PREFLIGHT_FLAG_MIN_DURATION_S = float(
+    os.getenv("PREFLIGHT_FLAG_MIN_DURATION_S", str(PREFLIGHT_MIN_DURATION_S))
+)
+PREFLIGHT_FLAG_MIN_ROWS = int(os.getenv("PREFLIGHT_FLAG_MIN_ROWS", str(PREFLIGHT_MIN_ROWS)))
+
+# Storage lifecycle (optional cleanup automation)
+RAW_RETENTION_DAYS = int(os.getenv("RAW_RETENTION_DAYS", "30"))
+RAW_DELETE_REQUIRES_PROCESSED = os.getenv("RAW_DELETE_REQUIRES_PROCESSED", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+)

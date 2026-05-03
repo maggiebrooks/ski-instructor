@@ -32,6 +32,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ski.analysis.turn_analyzer import TurnAnalyzer
+
 MIN_TURNS_FOR_SCORES = 5
 
 # Order used to break ties when choosing the weakest movement score for coaching.
@@ -204,6 +206,7 @@ class TurnInsights:
         analyzer,
         session_id: str,
         metadata: dict | None = None,
+        turns_df: pd.DataFrame | None = None,
     ) -> list[str]:
         """Convenience: load turns, compute scores, and summarize.
 
@@ -215,9 +218,17 @@ class TurnInsights:
             The session to analyze.
         metadata : dict | None
             Optional skier/ski metadata for physics-based normalization.
+        turns_df : DataFrame | None
+            When set, use this per-turn table instead of ``analyzer.load_turns``
+            (e.g. high-confidence subset). Session aggregates for headers are
+            derived from this same frame.
         """
-        df = analyzer.load_turns([session_id])
-        metrics = analyzer.session_metrics(session_id)
+        if turns_df is not None:
+            df = turns_df
+            metrics = TurnAnalyzer._compute_metrics(df, session_id)
+        else:
+            df = analyzer.load_turns([session_id])
+            metrics = analyzer.session_metrics(session_id)
         return self.summarize_session(metrics, df=df, metadata=metadata)
 
     # ------------------------------------------------------------------

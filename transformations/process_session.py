@@ -131,6 +131,30 @@ def load_session(session_dir):
         df = df.sort_values("time").drop_duplicates(subset="time").reset_index(drop=True)
         merged = pd.merge_asof(merged, df, on="time", direction="nearest")
 
+    # -----------------------------------------------------------------------
+    # Mobile recorder compatibility
+    # -----------------------------------------------------------------------
+    # The Expo mobile recorder currently uploads only Accelerometer.csv and
+    # Gyroscope.csv. Many downstream steps assume certain secondary columns
+    # exist (e.g. GPS `speed`, fused `roll`, MSL altitude). Make these columns
+    # optional by providing safe defaults when missing.
+    #
+    # Conventions:
+    # - `speed` < 0 means "unknown" (matches existing code paths).
+    # - Orientation/altitude defaults are NaN/0 so plots/features can run.
+    if "speed" not in merged.columns:
+        merged["speed"] = -1.0
+    if "altitudeAboveMeanSeaLevel" not in merged.columns:
+        merged["altitudeAboveMeanSeaLevel"] = np.nan
+    if "altitude" not in merged.columns:
+        merged["altitude"] = np.nan
+    if "roll" not in merged.columns:
+        merged["roll"] = 0.0
+    if "pitch" not in merged.columns:
+        merged["pitch"] = 0.0
+    if "yaw" not in merged.columns:
+        merged["yaw"] = 0.0
+
     logger.info("Loaded session: %d rows, %d columns", *merged.shape)
     return merged
 
@@ -159,10 +183,9 @@ def discover_sessions(data_dir):
 def preprocess(df, source_hz=100, cutoff=5.0, order=4, target_hz=20):
     """Timestamp normalisation, Butterworth low-pass filter, down-sample.
 
-    IMU axes are filtered with a *order*-th order zero-phase Butterworth
-    low-pass at *cutoff* Hz (``sosfiltfilt``).  Order 4 matches Elfmark
-    et al. 2021 (*Sensors*), who use a 4th-order zero-phase Butterworth
-    at fc = 5 Hz before differentiating position for velocity / acceleration.
+    Order 4 matches Elfmark et al. 2021 (*Sensors*), who use a 4th-order
+    zero-phase Butterworth at fc = 5 Hz before differentiating position
+    for velocity / acceleration. See ``docs/algorithm-spec.md`` row 76.
     """
     df = df.copy()
 
@@ -229,33 +252,27 @@ def segment_runs(df, window_s=30, descent_thresh=-0.3, ascent_thresh=0.3,
     """Classify each row as ``skiing``, ``lift``, or ``idle``.
 
     Uses the barometric ``relativeAltitude`` rate of change over a rolling
-    window.  Falls back to GPS ``altitude`` (noisier) or treats the entire
-    session as one skiing run when no altitude source is available.
+    window.  Short segments (< *min_segment_s*) are merged into their
+    neighbours to remove classification flicker.
 
     Adds columns: ``alt_rate``, ``activity``, ``run_id``.
     """
     df = df.copy()
     window = int(window_s * sample_rate)
 
-    alt_col = None
-    for candidate in ("relativeAltitude", "altitudeAboveMeanSeaLevel", "altitude"):
-        if candidate in df.columns and df[candidate].notna().any():
-            alt_col = candidate
-            break
-
-    if alt_col is None:
+    # Mobile recorder sessions (or some Sensor Logger exports) may not include
+    # Barometer.csv → no `relativeAltitude`. In that case we can't segment
+    # lift vs run from baro drift; treat the whole session as one skiing run.
+    if "relativeAltitude" not in df.columns:
         logger.warning(
-            "No altitude column found — treating entire session as one skiing run"
+            "segment_runs: missing relativeAltitude; defaulting to one skiing run"
         )
-        df["alt_rate"] = 0.0
+        df["alt_rate"] = np.nan
         df["activity"] = "skiing"
         df["run_id"] = 1
         return df
 
-    if alt_col != "relativeAltitude":
-        logger.info("Barometer missing; falling back to GPS column '%s'", alt_col)
-
-    alt = pd.Series(df[alt_col].values)
+    alt = pd.Series(df["relativeAltitude"].values)
     secs = pd.Series(df["seconds"].values)
     alt_rate = alt.diff(window) / secs.diff(window)
     alt_rate = alt_rate.bfill()
@@ -368,15 +385,14 @@ def detect_turns_by_run(df, column="gyro_z", height=0.5, distance=20,
         run_end_s = run_df["seconds"].iloc[-1]
         duration = run_end_s - run_start_s
 
-        _alt_col = next(
-            (c for c in ("altitudeAboveMeanSeaLevel", "altitude", "relativeAltitude")
-             if c in run_df.columns and run_df[c].notna().any()),
-            None,
-        )
-        alt_start = run_df[_alt_col].iloc[0] if _alt_col else None
-        alt_end = run_df[_alt_col].iloc[-1] if _alt_col else None
+        alt_col = "altitudeAboveMeanSeaLevel"
+        alt_start = run_df[alt_col].iloc[0] if alt_col in run_df.columns else np.nan
+        alt_end = run_df[alt_col].iloc[-1] if alt_col in run_df.columns else np.nan
 
-        valid_speed = run_df.loc[run_df["speed"] >= 0, "speed"] if "speed" in run_df.columns else pd.Series(dtype=float)
+        if "speed" in run_df.columns:
+            valid_speed = run_df.loc[run_df["speed"] >= 0, "speed"]
+        else:
+            valid_speed = pd.Series([], dtype=float)
 
         # Run-level turn quality aggregates
         angles = [t["pelvis_turn_angle_deg"] for t in per_turn]
@@ -390,7 +406,11 @@ def detect_turns_by_run(df, column="gyro_z", height=0.5, distance=20,
             "start_s": round(float(run_start_s), 1),
             "end_s": round(float(run_end_s), 1),
             "duration_s": round(float(duration), 1),
-            "vertical_drop_m": round(float(alt_start - alt_end), 1) if alt_start is not None and alt_end is not None else None,
+            "vertical_drop_m": (
+                round(float(alt_start - alt_end), 1)
+                if pd.notna(alt_start) and pd.notna(alt_end)
+                else 0
+            ),
             "num_turns": int(len(peaks)),
             "avg_speed_ms": round(float(valid_speed.mean()), 2) if len(valid_speed) > 0 else 0,
             "max_speed_ms": round(float(valid_speed.max()), 2) if len(valid_speed) > 0 else 0,
@@ -427,11 +447,7 @@ def compute_session_summary(df, run_results, sample_rate=20, output_path=None):
 
     total_turns = sum(r["num_turns"] for r in run_results)
     run_durations = [r["duration_s"] for r in run_results]
-    # vertical_drop_m may be None when no altitude sensors were present
-    vert_drops = [
-        v for v in (r.get("vertical_drop_m") for r in run_results)
-        if v is not None
-    ]
+    vert_drops = [r["vertical_drop_m"] for r in run_results]
 
     # Collect all per-turn metrics across runs for session-level aggregates
     all_turns = [t for r in run_results for t in r.get("per_turn", [])]
@@ -508,16 +524,10 @@ def plot_session(df, output_path, run_results=None):
     fig, axes = plt.subplots(5, 1, figsize=(18, 17), sharex=True)
 
     # Panel 1: Altitude profile
-    _plot_alt_col = next(
-        (c for c in ("altitudeAboveMeanSeaLevel", "altitude", "relativeAltitude")
-         if c in df.columns and df[c].notna().any()),
-        None,
-    )
-    if _plot_alt_col:
-        axes[0].plot(df["seconds"], df[_plot_alt_col],
-                     linewidth=0.8, color="tab:brown")
+    axes[0].plot(df["seconds"], df["altitudeAboveMeanSeaLevel"],
+                 linewidth=0.8, color="tab:brown")
     _shade_activity(axes[0], df)
-    axes[0].set_ylabel("Altitude (m)")
+    axes[0].set_ylabel("Altitude MSL (m)")
     axes[0].set_title("Altitude Profile  (blue = skiing, red = lift, grey = idle)")
     axes[0].grid(True, alpha=0.3)
 
@@ -534,12 +544,21 @@ def plot_session(df, output_path, run_results=None):
     axes[1].set_title("Turn Detection — Gyroscope Z-Axis (skiing runs only)")
     axes[1].grid(True, alpha=0.3)
 
-    # Panel 3: Speed
+    # Panel 3: Speed (optional for IMU-only mobile sessions)
     if "speed" in df.columns:
         valid_speed = df["speed"].copy()
         valid_speed[valid_speed < 0] = np.nan
-        axes[2].plot(df["seconds"], valid_speed * 3.6, linewidth=0.5,
-                     color="tab:purple")
+        axes[2].plot(df["seconds"], valid_speed * 3.6, linewidth=0.5, color="tab:purple")
+    else:
+        axes[2].text(
+            0.5,
+            0.5,
+            "Speed not available",
+            transform=axes[2].transAxes,
+            ha="center",
+            va="center",
+            color="#666",
+        )
     _shade_activity(axes[2], df)
     axes[2].set_ylabel("Speed (km/h)")
     axes[2].set_title("GPS Speed")

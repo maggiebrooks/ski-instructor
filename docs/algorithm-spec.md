@@ -35,7 +35,7 @@ Companion documents:
 | Source | iPhone built-in IMU, exported by Sensor Logger as Accelerometer.csv, Gyroscope.csv, Orientation.csv |
 | Definition | Apple Core Motion device-fixed axes: +x = right of screen, +y = top of screen, +z = out of screen toward user |
 | Sample rate | 100 Hz (accel, gyro), variable for secondary sensors |
-| Mounting assumption | Phone in belly / chest pocket, screen toward body, top of phone roughly upward |
+| Mounting assumption | Phone in **front thigh pocket** (preferred), screen toward body, top of phone roughly upward (see `docs/MASTER_PLAN.md` Phone placement spec) |
 | Validation status | empirical, untested per-session |
 
 ### 1.2 Body frame (intermediate, **not yet implemented**)
@@ -189,7 +189,7 @@ copy, marketing material, or report header until validated.
 | Non-claim | Reason | Reference |
 |-----------|--------|-----------|
 | "Measured ski edge angle" | Roll is taken from Sensor Logger's fused IMU and assumed to track ski edge. We have no ski IMU. | Tang 2024 reports γ RMSE 13° even with a ski-mounted IMU. |
-| "Centre-of-mass trajectory" | We use the phone's location (belly pocket) as a proxy. Fasel 2016 measures hip-to-CoM offset at ~0.10 m. | Fasel 2016 |
+| "Centre-of-mass trajectory" | We use the phone's location (thigh pocket, near pelvis) as a proxy. Fasel 2016 measures hip-to-CoM offset at ~0.10 m. | Fasel 2016 |
 | "Carving vs. skidding detection" (binary) | `pressure_ratio` is a single-IMU proxy with no ground-truth calibration. The literature gold standard requires strain gauges + dGNSS. | Adelsberger 2014 |
 | "Sub-metre turn radius accuracy" | Even strain-gauge + dGNSS pipelines report ~1 m RMS difference between ski and CoM radius. | Adelsberger 2014 |
 | "Sub-degree edge or attitude accuracy" | Single-phone fusion + tilted pocket frame cannot reach Madgwick's lab-validated < 0.6° static error. | Madgwick 2010 |
