@@ -1,15 +1,14 @@
 # Render deployment configuration
-# Database: SQLite on Render Disk at /persist/data/ski.db
+# Database: SQLite under default app storage (ephemeral unless you add a disk
+# or external DB later).
 # Redis: Render free tier (25MB, no persistence — queue only)
-# Disk: 1GB Render Disk for raw sessions, processed output, plots, SQLite DB
 #
 # BEFORE WINTER 2026: upgrade ski-ai-redis to paid plan and provision
 # Render Postgres Starter ($7/mo) — free Postgres expires in 90 days.
 # See docs/MASTER_PLAN.md Section 8 open question 1.
 #
-# Note: Persistent disks require a paid web instance type on Render; if
-# blueprint apply fails, set the web service plan to Starter (or higher) in
-# the dashboard and attach the disk there.
+# For durable raw/processed files and DB across deploys, attach a Render Disk
+# and set PERSISTENT_DIR to its mount path in the dashboard.
 
 services:
   - type: web
@@ -18,13 +17,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: honcho start -f Procfile.render
-    disk:
-      name: ski-ai-disk
-      mountPath: /persist
-      sizeGB: 1
     envVars:
-      - key: PERSISTENT_DIR
-        value: /persist
       - key: REDIS_URL
         fromService:
           name: ski-ai-redis
