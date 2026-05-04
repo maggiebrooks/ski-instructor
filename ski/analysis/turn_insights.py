@@ -49,26 +49,26 @@ SCORE_PRIORITY = [
 
 METRIC_ACTION_MAP = {
     "turn_rhythm": (
-        "Next run: focus on smoother, more consistent timing between turns — "
-        "count a steady rhythm as you ski."
+        "Next run: focus on smoother, more consistent timing between turns. "
+        "Count a steady rhythm as you ski."
     ),
     "pressure_management": (
-        "Next run: apply pressure earlier in the turn — exaggerate it at initiation."
+        "Next run: apply pressure earlier in the turn; exaggerate it at initiation."
     ),
     "edge_consistency": (
         "Next run: commit to stronger edge angles through the middle of each turn."
     ),
     "rotary_stability": (
-        "Next run: reduce upper body rotation — let your skis guide the turn."
+        "Next run: reduce upper body rotation and let your skis guide the turn."
     ),
     "turn_symmetry": (
-        "Next run: match your left and right turns — focus on equal weight and shape."
+        "Next run: match your left and right turns with equal weight and shape."
     ),
     "turn_shape_consistency": (
-        "Next run: aim for more consistent turn shapes — avoid mixing sharp and wide turns."
+        "Next run: aim for more consistent turn shapes instead of mixing sharp and wide turns."
     ),
     "turn_efficiency": (
-        "Next run: stay balanced and flowing — avoid unnecessary skidding or braking."
+        "Next run: stay balanced and flowing; avoid unnecessary skidding or braking."
     ),
 }
 
@@ -92,7 +92,7 @@ def _generate_actionable_top_insight(scores: dict) -> str:
     )
 
     if worst_score < 0.20:
-        return f"Priority fix — {action}"
+        return f"Priority fix: {action}"
 
     return action
 
@@ -264,7 +264,7 @@ class TurnInsights:
             ``pressure_ratio``  – median(measured_g / expected_centripetal_g)
                 with expected_g = v²/(r·g).  Unity is the ideal anchor for a
                 consistent (v, r) pair; zone labels in UI copy are provisional
-                (see docs/algorithm-spec.md §3.1 — skidding can raise or lower
+                (see docs/algorithm-spec.md §3.1; skidding can raise or lower
                 the ratio depending on how ``pelvis_estimated_turn_radius``
                 relates to true path radius and on ``accel_mag`` vs. lateral).
             ``torso_rotation_ratio``  – median((ang_vel * dur) / |turn_angle|).

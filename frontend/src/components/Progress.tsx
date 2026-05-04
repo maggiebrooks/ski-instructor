@@ -20,7 +20,7 @@ const progressMap: Record<string, string> = {
   running_pipeline: 'Analyzing your turns',
   generating_report: 'Building your insights',
   generating_plots: 'Creating visuals',
-  complete: 'Done 🎉',
+  complete: 'Done',
   processing: 'Reading your ski data',
   analyzing: 'Building your insights',
 }
@@ -52,7 +52,6 @@ export default function Progress({ stage }: { stage: string }) {
               fontWeight: active ? 700 : 400,
             }}
           >
-            {done ? '✓ ' : active ? '▶ ' : '  '}
             {progressMap[s] || 'Processing…'}
           </div>
         )

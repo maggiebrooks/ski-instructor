@@ -146,7 +146,7 @@ export default function ResultsScreen({ go, sessionId }: Props) {
         </Text>
         <Text style={styles.muted}>
           Overall score:{' '}
-          {averageScore != null ? `${(averageScore * 100).toFixed(0)}` : '—'}
+          {averageScore != null ? `${(averageScore * 100).toFixed(0)}` : '--'}
         </Text>
         <View style={{ height: spacing.md }} />
         <Text style={styles.muted}>Session ID</Text>
@@ -175,13 +175,13 @@ export default function ResultsScreen({ go, sessionId }: Props) {
 
       {showLimitedDataNote ? (
         <Text style={[styles.muted, styles.limitedDataNote]}>
-          ℹ️ Scores are based on limited data — ski more runs to improve accuracy.
+          Scores are based on limited data; ski more runs to improve accuracy.
         </Text>
       ) : null}
 
       {showLowDataCallout ? (
         <View style={styles.lowDataCallout}>
-          <Text style={styles.lowDataCalloutTitle}>⚠️ Not enough data for scores</Text>
+          <Text style={styles.lowDataCalloutTitle}>Not enough data for scores</Text>
           <Text style={styles.lowDataCalloutBody}>
             This session had too few high-quality turns to compute movement scores.{'\n'}
             Try recording a longer run on groomed terrain.
@@ -230,7 +230,7 @@ function SessionSignalQualityLine({ quality }: { quality: SessionQualityFile }) 
       ? 'Good signal quality'
       : tier === 'yellow'
         ? 'Fair signal quality'
-        : 'Weak signal — results may be less accurate';
+        : 'Weak signal: results may be less accurate';
   const textStyle =
     tier === 'green'
       ? styles.signalTextGood

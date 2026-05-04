@@ -1,0 +1,38 @@
+:root {
+  /* Surfaces */
+  --color-bg: #f8f7f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f2f1ef;
+  --color-border: #e8e6e2;
+  --color-border-strong: #d0cdc8;
+
+  /* Accent: deep forest green */
+  --color-accent: #2d6a4f;
+  --color-accent-hover: #245a42;
+  --color-accent-dim: rgba(45, 106, 79, 0.08);
+
+  /* Text */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5a5a5a;
+  --color-text-muted: #9a9a9a;
+
+  /* Semantic */
+  --color-success: #2d6a4f;
+  --color-warning: #e67e22;
+  --color-danger: #c0392b;
+  --color-left-turn: #2980b9;
+  --color-right-turn: #c0392b;
+
+  /* Typography: Inter only */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
