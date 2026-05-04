@@ -438,10 +438,11 @@ export default function Session() {
 
   useEffect(() => {
     if (!id) return
+    const sessionId = id
 
     async function poll() {
       try {
-        const res = (await getSession(id)) as SessionData
+        const res = (await getSession(sessionId)) as SessionData
         pollFailuresRef.current = 0
         setNotFound(false)
         setData(res)
