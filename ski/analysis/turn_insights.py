@@ -585,14 +585,20 @@ class TurnInsights:
         if pm is not None:
             if pm < 0.3:
                 text = (
-                    "You may be skiing slightly aft, with limited pressure "
-                    "engagement through the ski."
+                    "Your weight is sitting back — focus on driving your shins into the "
+                    "front of your boots through the fall line. Think about keeping your "
+                    "hands forward and in view."
                 )
             elif pm <= 0.6:
-                text = "You maintain moderate fore/aft pressure through turns."
+                text = (
+                    "You have a decent platform but could load the outside ski earlier at "
+                    "turn initiation. Try feeling the ball of your foot press into the boot "
+                    "as you tip into each turn."
+                )
             else:
                 text = (
-                    "You maintain strong fore/aft pressure through the turn."
+                    "Solid fore/aft balance — you are staying centered over your skis "
+                    "through the turn. Keep it up."
                 )
             vals = [f"pressure management: {pm:.2f}"]
             sl = scores.get("speed_loss_avg")
@@ -604,16 +610,20 @@ class TurnInsights:
         if ts is not None:
             if ts < 0.4:
                 text = (
-                    "You show a strong bias toward one turn direction, "
-                    "suggesting uneven weight distribution."
+                    "There is a noticeable difference between your left and right turns. "
+                    "Pick your weaker side and spend a run focusing only on that direction — "
+                    "match the feel of your stronger side."
                 )
             elif ts <= 0.7:
                 text = (
-                    "There is a slight imbalance in how you weight turns "
-                    "between sides."
+                    "Your left and right turns are close but not quite matched. Pay attention "
+                    "to which side feels easier and try to bring the same commitment to both."
                 )
             else:
-                text = "Your left and right turns are well balanced."
+                text = (
+                    "Your left and right turns are well matched — that symmetry is a real "
+                    "strength and shows good foot-to-foot balance."
+                )
             vals = [f"symmetry: {ts:.2f}"]
             left = scores.get("left_turns")
             right = scores.get("right_turns")
@@ -627,15 +637,20 @@ class TurnInsights:
         if rs is not None:
             if rs < 0.4:
                 text = (
-                    "Your turns involve significant upper body rotation, "
-                    "suggesting steering-driven turns."
+                    "Your upper body is doing a lot of the steering work. Try to keep your "
+                    "shoulders pointing downhill and let your legs do the turning — think hips "
+                    "and below initiating each turn while your torso stays quiet."
                 )
             elif rs <= 0.7:
-                text = "You apply moderate rotary input to guide turns."
+                text = (
+                    "Some upper body rotation is creeping in. Focus on keeping your pole swing "
+                    "relaxed and forward — it will help anchor your upper body and free up your "
+                    "legs to carve."
+                )
             else:
                 text = (
-                    "Your turns show minimal upper body rotation, "
-                    "indicating edge-driven technique."
+                    "Good rotary discipline — your upper body is staying calm and letting your "
+                    "lower body drive the turns. That is the foundation of clean carved skiing."
                 )
             vals = [f"rotary stability: {rs:.2f}"]
             rr = scores.get("rotary_ratio_raw")
@@ -647,15 +662,20 @@ class TurnInsights:
         if ec is not None:
             if ec < 0.4:
                 text = (
-                    "Edge engagement varies significantly, suggesting "
-                    "inconsistent carving."
+                    "Your edges are not engaging consistently through the turn. Work on "
+                    "tipping your knees and ankles into the hill progressively — think of "
+                    "building edge angle gradually from turn initiation to the fall line."
                 )
             elif ec <= 0.7:
-                text = "You maintain moderate edging control through turns."
+                text = (
+                    "Your edging is decent but inconsistent between turns. Try to feel the "
+                    "edge bite at the same point in every turn — a consistent tipping motion "
+                    "from the ankle up."
+                )
             else:
                 text = (
-                    "You create consistent edge-driven turns with "
-                    "smooth engagement."
+                    "Strong edge control — you are holding a clean arc through the turn. "
+                    "That kind of consistency is what separates good skiers from great ones."
                 )
             vals = [f"edge consistency: {ec:.2f}"]
             rcv = scores.get("radius_cv_raw")
@@ -667,15 +687,20 @@ class TurnInsights:
             combined = (pm + ec) / 2
             if combined < 0.4:
                 text = (
-                    "Limited pressure build suggests light ski bending "
-                    "through turns."
+                    "Pressure management needs attention — focus on one thing: staying forward "
+                    "and tipping your edges earlier in each turn. Those two habits reinforce "
+                    "each other."
                 )
             elif combined <= 0.7:
-                text = "You maintain consistent pressure control."
+                text = (
+                    "Your pressure management is solid in parts but breaking down in others. "
+                    "Try to feel where in the turn you lose the snow and make that your focus "
+                    "point."
+                )
             else:
                 text = (
-                    "You generate strong pressure through the ski, "
-                    "indicating active technique."
+                    "Excellent pressure management overall — you are loading and releasing the "
+                    "ski efficiently through the turn."
                 )
             vals = [f"pressure: {combined:.2f}"]
             gf = scores.get("g_force_avg")
@@ -686,15 +711,20 @@ class TurnInsights:
             gf = scores.get("g_force_avg")
             if pm < 0.4:
                 text = (
-                    "Limited pressure build suggests light ski bending "
-                    "through turns."
+                    "Pressure management needs attention — focus on one thing: staying forward "
+                    "and tipping your edges earlier in each turn. Those two habits reinforce "
+                    "each other."
                 )
             elif pm <= 0.7:
-                text = "You maintain consistent pressure control."
+                text = (
+                    "Your pressure management is solid in parts but breaking down in others. "
+                    "Try to feel where in the turn you lose the snow and make that your focus "
+                    "point."
+                )
             else:
                 text = (
-                    "You generate strong pressure through the ski, "
-                    "indicating active technique."
+                    "Excellent pressure management overall — you are loading and releasing the "
+                    "ski efficiently through the turn."
                 )
             vals = [f"pressure: {pm:.2f}"]
             if gf is not None:
@@ -705,18 +735,20 @@ class TurnInsights:
         if tr is not None:
             if tr < 0.4:
                 text = (
-                    "Your turns vary significantly in rhythm, suggesting "
-                    "inconsistent timing between turns."
+                    "Your turn spacing is uneven — some turns feel rushed and others linger. "
+                    "Count a steady beat in your head from apex to apex and let your skis "
+                    "change direction on that rhythm."
                 )
             elif tr <= 0.7:
                 text = (
-                    "Your turn rhythm is moderately consistent with some "
-                    "variation in cadence."
+                    "You are close to a steady cadence but a few turns sneak in faster or "
+                    "slower than the rest. Pick a comfortable tempo at the top of the run and "
+                    "protect it turn after turn."
                 )
             else:
                 text = (
-                    "You maintain a steady turn rhythm, indicating strong "
-                    "timing and flow."
+                    "Nice flow — your turns arrive on a predictable beat, which lets you spend "
+                    "more attention on line and snow contact instead of chasing timing."
                 )
             vals = [f"rhythm: {tr:.2f}"]
             dcv = scores.get("duration_cv_raw")

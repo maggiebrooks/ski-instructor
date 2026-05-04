@@ -34,7 +34,7 @@ SKIP_PREFIXES = ("__MACOSX", ".")
 
 # Max coaching sentences in report (after clean_insights); optional frame line added below.
 TOP_COACHING_INSIGHTS_N = 5
-_COACHING_FRAME = "For your next run, focus on the following:"
+_COACHING_FRAME = "Here is what stood out from your session:"
 _NO_TURNS_INSIGHT = "No turns detected in this session."
 
 

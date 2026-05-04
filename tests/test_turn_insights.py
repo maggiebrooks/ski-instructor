@@ -408,7 +408,7 @@ class TestInterpretFundamentals:
         }
         sections = insights.interpret_fundamentals(scores)
         flat = "\n".join(b for _, bs in sections for b in bs)
-        assert "aft" in flat.lower()
+        assert "sitting back" in flat.lower() or "shins" in flat.lower()
 
     def test_high_edge_consistent_feedback(self, insights):
         scores = {
@@ -433,7 +433,7 @@ class TestInterpretFundamentals:
         }
         sections = insights.interpret_fundamentals(scores)
         flat = "\n".join(b for _, bs in sections for b in bs)
-        assert "consistent edge-driven" in flat
+        assert "strong edge control" in flat.lower() or "clean arc" in flat.lower()
 
     def test_high_rotary_stability_edge_driven(self, insights):
         scores = {
@@ -458,7 +458,7 @@ class TestInterpretFundamentals:
         }
         sections = insights.interpret_fundamentals(scores)
         flat = "\n".join(b for _, bs in sections for b in bs)
-        assert "minimal upper body rotation" in flat
+        assert "rotary discipline" in flat.lower() or "upper body is staying calm" in flat.lower()
 
     def test_none_scores_empty_output(self, insights):
         scores = {
@@ -509,7 +509,7 @@ class TestInterpretFundamentals:
         headings = [h for h, _ in sections]
         assert "Turn Rhythm" in headings
         flat = "\n".join(b for _, bs in sections for b in bs)
-        assert "inconsistent timing" in flat
+        assert "spacing" in flat.lower() or "uneven" in flat.lower()
 
     def test_high_rhythm_steady_feedback(self, insights):
         scores = {
@@ -534,7 +534,7 @@ class TestInterpretFundamentals:
         }
         sections = insights.interpret_fundamentals(scores)
         flat = "\n".join(b for _, bs in sections for b in bs)
-        assert "steady turn rhythm" in flat
+        assert "predictable beat" in flat.lower() or "nice flow" in flat.lower()
 
     def test_metadata_accepted_no_error(self, insights):
         scores = {
@@ -602,10 +602,10 @@ class TestCleanInsights:
             "Fundamental Analysis",
             "",
             "Fore/Aft Balance",
-            "  You maintain moderate fore/aft pressure through turns.",
+            "  You have a decent platform but could load the outside ski earlier at turn initiation.",
             "  [pressure management: 0.52, avg speed loss: 0.0%]",
             "Edging Control",
-            "You create consistent edge-driven turns with smooth engagement.",
+            "Strong edge control — you are holding a clean arc through the turn.",
             "[edge consistency: 0.88]",
         ]
         out = clean_insights(raw)
@@ -614,8 +614,8 @@ class TestCleanInsights:
         assert "Fore/Aft Balance" not in out
         assert "Edging Control" not in out
         assert not any("[" in line for line in out)
-        assert any("moderate fore/aft pressure" in line for line in out)
-        assert any("consistent edge-driven" in line for line in out)
+        assert any("outside ski" in line for line in out)
+        assert any("clean arc" in line for line in out)
 
     def test_no_turns_message_preserved(self):
         out = clean_insights(["No turns detected in this session."])

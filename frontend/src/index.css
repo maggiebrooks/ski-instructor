@@ -822,6 +822,129 @@ a.btn {
   border-top: 1px solid var(--color-border);
 }
 
+.coach-notes-subtitle {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.coach-notes-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-card {
+  margin: 0;
+  padding: 16px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.coach-card--high {
+  border-left: 3px solid var(--color-success);
+}
+
+.coach-card--mid {
+  border-left: 3px solid var(--color-warning);
+}
+
+.coach-card--low {
+  border-left: 3px solid var(--color-danger);
+}
+
+.coach-card--na {
+  border-left: 3px solid var(--color-border-strong);
+}
+
+.coach-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.coach-card-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.coach-card-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.coach-card-title {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.coach-card-body {
+  margin: 10px 0 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.coach-notes-overflow {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-card-body--plain {
+  margin-top: 0;
+  padding: 12px 16px;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.coach-score-pill {
+  flex-shrink: 0;
+  min-width: 36px;
+  padding: 4px 10px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.coach-score-pill--high {
+  color: var(--color-success);
+  background: rgba(45, 106, 79, 0.12);
+}
+
+.coach-score-pill--mid {
+  color: var(--color-warning);
+  background: rgba(230, 126, 34, 0.14);
+}
+
+.coach-score-pill--low {
+  color: var(--color-danger);
+  background: rgba(192, 57, 43, 0.12);
+}
+
+.coach-score-pill--na {
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+}
+
 .warning-note-light {
   padding: 14px 0 14px 16px;
   border-left: 3px solid var(--color-warning);

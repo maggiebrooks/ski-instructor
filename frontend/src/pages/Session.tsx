@@ -47,12 +47,33 @@ const SCORE_LABELS: Record<(typeof SCORE_KEYS)[number], string> = {
 }
 
 const METRIC_INSIGHT_HINTS: Record<(typeof SCORE_KEYS)[number], readonly string[]> = {
-  rotary_stability: ['rotary', 'rotation', 'upper body', 'steering'],
-  edge_consistency: ['edge', 'angles'],
-  pressure_management: ['pressure', 'initiation', 'weight'],
-  turn_symmetry: ['symmetry', 'left and right', 'balanced'],
+  rotary_stability: ['rotary', 'rotation', 'upper body', 'steering', 'shoulders', 'torso'],
+  edge_consistency: ['edge', 'angles', 'tipping', 'ankles', 'knees', 'arc'],
+  pressure_management: [
+    'shins',
+    'boots',
+    'fore/aft',
+    'weight is sitting',
+    'outside ski',
+    'decent platform',
+    'solid fore',
+    'ball of your foot',
+    'hands forward',
+    'centered over your skis',
+  ],
+  turn_symmetry: ['symmetry', 'left and right', 'balanced', 'weaker side', 'foot-to-foot'],
   turn_shape_consistency: ['shape', 'consistent turn', 'sharp and wide'],
-  turn_rhythm: ['rhythm', 'timing', 'consistent timing'],
+  turn_rhythm: [
+    'rhythm',
+    'timing',
+    'cadence',
+    'beat',
+    'spacing',
+    'flow',
+    'apex',
+    'predictable',
+    'tempo',
+  ],
   turn_efficiency: ['efficien', 'skid', 'braking', 'flowing'],
 }
 
@@ -198,6 +219,79 @@ function scoreNumeric(
 ): number | undefined {
   const v = scores[key]
   return typeof v === 'number' && Number.isFinite(v) ? v : undefined
+}
+
+const COACHING_FRAME_LINE = 'Here is what stood out from your session:'
+
+function splitCoachingInsights(lines: readonly string[]): {
+  subtitle: string | null
+  bodies: string[]
+} {
+  if (lines.length === 0) return { subtitle: null, bodies: [] }
+  const t = lines[0].trim()
+  if (
+    t === COACHING_FRAME_LINE ||
+    t.startsWith('Here is what stood out') ||
+    t.startsWith('For your next run, focus on the following')
+  ) {
+    return { subtitle: lines[0].trim(), bodies: lines.slice(1) }
+  }
+  return { subtitle: null, bodies: [...lines] }
+}
+
+/** Order matches ``interpret_fundamentals`` in ``ski/analysis/turn_insights.py``. */
+type CoachNoteCardDef = {
+  label: string
+  icon: string
+  /** 0–1 score for left border, pill, and tier coloring. */
+  tierScore: number | null
+}
+
+function coachNoteCardDefsInSessionOrder(scores: Record<string, number | null>): CoachNoteCardDef[] {
+  const pm = scores.pressure_management
+  const ec = scores.edge_consistency
+  const out: CoachNoteCardDef[] = []
+  if (pm != null) {
+    out.push({ label: 'Fore/Aft Balance', icon: '⬆', tierScore: pm })
+  }
+  if (scores.turn_symmetry != null) {
+    out.push({ label: 'Foot-to-Foot Balance', icon: '⚖', tierScore: scores.turn_symmetry })
+  }
+  if (scores.rotary_stability != null) {
+    out.push({ label: 'Rotary Control', icon: '↻', tierScore: scores.rotary_stability })
+  }
+  if (ec != null) {
+    out.push({ label: 'Edging Control', icon: '◇', tierScore: ec })
+  }
+  if (pm != null && ec != null) {
+    out.push({ label: 'Pressure Control', icon: '▽', tierScore: (pm + ec) / 2 })
+  } else if (pm != null) {
+    out.push({ label: 'Pressure Control', icon: '▽', tierScore: pm })
+  }
+  if (scores.turn_rhythm != null) {
+    out.push({ label: 'Turn Rhythm', icon: '∿', tierScore: scores.turn_rhythm })
+  }
+  return out
+}
+
+type CoachTier = 'high' | 'mid' | 'low' | 'na'
+
+function coachScoreTier(score: number | null): CoachTier {
+  if (score == null || !Number.isFinite(score)) return 'na'
+  if (score >= 0.7) return 'high'
+  if (score >= 0.4) return 'mid'
+  return 'low'
+}
+
+function coachScorePillClass(tier: CoachTier): string {
+  if (tier === 'high') return 'coach-score-pill coach-score-pill--high'
+  if (tier === 'mid') return 'coach-score-pill coach-score-pill--mid'
+  if (tier === 'low') return 'coach-score-pill coach-score-pill--low'
+  return 'coach-score-pill coach-score-pill--na'
+}
+
+function coachCardClass(tier: CoachTier): string {
+  return `coach-card coach-card--${tier}`
 }
 
 function deriveAvgTurnDurationS(summary: SummaryBlock | undefined): string | null {
@@ -564,6 +658,9 @@ export default function Session() {
   const scores = report.scores ?? {}
   const insights = report.insights ?? []
   const cleanedInsights = insights.filter((i: string) => i.trim().length > 0)
+  const coachingParts = splitCoachingInsights(cleanedInsights)
+  const coachingBodies = coachingParts.bodies
+  const coachCardDefs = coachNoteCardDefsInSessionOrder(scores)
   const topInsight = report.top_insight?.trim() || null
   const warnings = report.warnings ?? []
   const scoreConfidence = report.score_confidence ?? 'unknown'
@@ -663,7 +760,7 @@ export default function Session() {
             const pct = raw != null ? Math.max(0, Math.min(100, val ?? 0)) : 0
             const showTip =
               raw != null && raw < 0.6
-                ? insightForMetric(key, cleanedInsights) ?? METRIC_COACHING[key] ?? null
+                ? insightForMetric(key, coachingBodies) ?? METRIC_COACHING[key] ?? null
                 : null
             const dim = raw == null
             return (
@@ -781,11 +878,53 @@ export default function Session() {
             Ski more runs to unlock personalized coaching notes.
           </p>
         ) : (
-          cleanedInsights.map((line, i) => (
-            <div key={`${i}-${line.slice(0, 24)}`} className="coach-note-light">
-              {line}
+          <>
+            {coachingParts.subtitle ? (
+              <p className="coach-notes-subtitle">{coachingParts.subtitle}</p>
+            ) : null}
+            <div className="coach-notes-cards">
+              {Array.from(
+                { length: Math.min(coachCardDefs.length, coachingBodies.length) },
+                (_, i) => {
+                  const def = coachCardDefs[i]
+                  const body = coachingBodies[i]
+                  const tier = coachScoreTier(def.tierScore)
+                  const pill =
+                    def.tierScore != null && Number.isFinite(def.tierScore)
+                      ? String(Math.round(def.tierScore * 100))
+                      : '-'
+                  return (
+                    <div
+                      key={`coach-${i}-${def.label}`}
+                      className={coachCardClass(tier)}
+                      role="article"
+                      aria-label={`${def.label} coaching note`}
+                    >
+                      <div className="coach-card-head">
+                        <div className="coach-card-cat">
+                          <span className="coach-card-icon" aria-hidden>
+                            {def.icon}
+                          </span>
+                          <span className="coach-card-title">{def.label}</span>
+                        </div>
+                        <span className={coachScorePillClass(tier)}>{pill}</span>
+                      </div>
+                      <p className="coach-card-body">{body}</p>
+                    </div>
+                  )
+                },
+              )}
             </div>
-          ))
+            {coachingBodies.length > coachCardDefs.length ? (
+              <div className="coach-notes-overflow">
+                {coachingBodies.slice(coachCardDefs.length).map((line, j) => (
+                  <p key={`coach-extra-${j}-${line.slice(0, 20)}`} className="coach-card-body coach-card-body--plain">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </>
         )}
         {warnings.length > 0 && (
           <div style={{ marginTop: 16 }}>
