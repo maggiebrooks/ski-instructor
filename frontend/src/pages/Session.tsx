@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { deleteSession, getSession } from '../api'
 import DemoModeBanner from '../components/DemoModeBanner'
+import TurnArcViz, { type RunResult } from '../components/TurnArcViz'
 
 const SESSION_POLL_MAX_FAILURES_DEFAULT = 8
 const SESSION_POLL_MAX_FAILURES_404 = 2
@@ -79,6 +80,8 @@ interface Report {
   total_turn_count?: number
   filtered_turn_count?: number
   processing_version?: string
+  /** Per-run turn metrics (written by worker for TurnArcViz). */
+  runs?: RunResult[]
 }
 
 interface SessionData {
@@ -300,7 +303,6 @@ function StatSplitLight({
   )
 }
 
-// TODO: replace with interactive SVG turn arcs (next prompt)
 function TurnSignatureImage({ sessionId }: { sessionId: string }) {
   const src = `/api/session/${sessionId}/plot/${sessionId}_turn_signature.png`
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading')
@@ -587,6 +589,11 @@ export default function Session() {
 
   const footerText = buildFooterLine(report)
 
+  const runsForViz = report.runs
+  const showTurnArcViz =
+    Array.isArray(runsForViz) &&
+    runsForViz.some((r) => Array.isArray(r.per_turn) && r.per_turn.length > 0)
+
   return (
     <div className="shell-results">
       <DemoModeBanner />
@@ -750,7 +757,11 @@ export default function Session() {
 
       <div className="card card-hover" style={{ marginBottom: 24 }}>
         <h2 className="card-title-results">Turn Analysis</h2>
-        <TurnSignatureImage sessionId={id} />
+        {showTurnArcViz && runsForViz ? (
+          <TurnArcViz key={id} runs={runsForViz} width={600} height={400} />
+        ) : (
+          <TurnSignatureImage sessionId={id} />
+        )}
         <p
           style={{
             marginTop: 12,
@@ -759,7 +770,7 @@ export default function Session() {
             lineHeight: 1.45,
           }}
         >
-          Red = right turns · Blue = left turns · Dot size reflects turn radius
+          Blue = left turns · Green = right turns · Opacity reflects confidence
         </p>
       </div>
 

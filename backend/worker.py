@@ -3,22 +3,30 @@
 import io
 import json
 import logging
+import sys
 from pathlib import Path
 
 from backend.config import DATA_DIR, LOGS_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.models import update_job
 from backend.storage import get_path, write_bytes
 
-_LOG_DIR = LOGS_DIR
-
-_handler = logging.FileHandler(_LOG_DIR / "worker.log")
-_handler.setFormatter(
-    logging.Formatter("%(asctime)s  %(levelname)-8s  %(name)s  %(message)s")
-)
+_log_fmt = logging.Formatter("%(asctime)s  %(levelname)-8s  %(name)s  %(message)s")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.addHandler(_handler)
+if not logger.handlers:
+    _stream = logging.StreamHandler(sys.stdout)
+    _stream.setFormatter(_log_fmt)
+    logger.addHandler(_stream)
+    try:
+        _worker_log = LOGS_DIR / "worker.log"
+        with open(_worker_log, "a", encoding="utf-8"):
+            pass
+        _file = logging.FileHandler(_worker_log)
+        _file.setFormatter(_log_fmt)
+        logger.addHandler(_file)
+    except OSError:
+        pass
 
 DB_PATH = str((DATA_DIR / "ski.db").resolve())
 
@@ -256,6 +264,28 @@ def run_pipeline(session_id: str) -> dict:
             "score_confidence": score_confidence,
         }
         report.setdefault("warnings", []).extend(warnings)
+
+        # Per-run turn arcs for web TurnArcViz (same shape as summary["runs"], plus per-turn confidence).
+        runs_src = summary.get("runs") or []
+        enriched_runs: list[dict] = []
+        for run in runs_src:
+            rd = dict(run)
+            new_turns: list[dict] = []
+            for t in rd.get("per_turn") or []:
+                td = dict(t)
+                shim = {
+                    **td,
+                    "speed_at_apex": td.get("speed_at_apex_kmh"),
+                    "pelvis_peak_angular_velocity": td.get("pelvis_peak_rotation_rate"),
+                }
+                td["confidence"] = round(
+                    float(compute_per_turn_confidence(shim, data_quality)), 4
+                )
+                new_turns.append(td)
+            rd["per_turn"] = new_turns
+            enriched_runs.append(rd)
+        report["runs"] = enriched_runs
+
         # Single source of truth: deterministic map from movement scores (not stale report.json).
         report["top_insight"] = _generate_actionable_top_insight(scores)
         logger.info("top_insight for %s: %s", session_id, report["top_insight"][:120])

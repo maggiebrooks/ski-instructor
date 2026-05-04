@@ -21,7 +21,8 @@
   --color-warning: #e67e22;
   --color-danger: #c0392b;
   --color-left-turn: #2980b9;
-  --color-right-turn: #c0392b;
+  /* Right-turn accent (turn viz + LR split); distinct from danger red */
+  --color-right-turn: #218c5a;
 
   /* Typography: Inter only */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;

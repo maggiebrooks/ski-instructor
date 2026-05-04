@@ -31,12 +31,18 @@ def _init_deployment_logging() -> None:
         logging.getLogger("redis").setLevel(logging.WARNING)
         logging.getLogger("rq").setLevel(logging.INFO)
     else:
-        logging.basicConfig(
-            level=level,
-            format=fmt,
-            filename=str(LOGS_DIR / "api.log"),
-            force=True,
-        )
+        _api_log = LOGS_DIR / "api.log"
+        try:
+            with open(_api_log, "a", encoding="utf-8"):
+                pass
+            logging.basicConfig(
+                level=level,
+                format=fmt,
+                filename=str(_api_log),
+                force=True,
+            )
+        except OSError:
+            logging.basicConfig(level=level, format=fmt, stream=sys.stdout, force=True)
 
 
 _init_deployment_logging()
