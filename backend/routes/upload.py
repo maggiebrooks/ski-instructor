@@ -5,7 +5,7 @@ import io
 import logging
 import os
 import shutil
-import time
+import threading
 import zipfile
 from pathlib import Path
 from uuid import uuid4
@@ -13,6 +13,7 @@ from uuid import uuid4
 import redis.exceptions
 from fastapi import APIRouter, UploadFile, HTTPException
 from rq import Queue
+from starlette.responses import JSONResponse
 
 from backend.config import (
     RAW_DIR,
@@ -112,7 +113,12 @@ async def upload_session(file: UploadFile):
         zf.extractall(session_dir)
         _flatten_single_top_level(session_dir)
 
-    _fsync_extracted_tree(session_dir)
+    threading.Thread(
+        target=_fsync_extracted_tree,
+        args=(session_dir,),
+        daemon=True,
+        name=f"fsync-{session_id[:8]}",
+    ).start()
 
     # --- Preflight validation BEFORE enqueue (cheap worker-cost saver) ---
     preflight = preflight_validate_session(
@@ -155,8 +161,6 @@ async def upload_session(file: UploadFile):
                 status_code=500,
                 detail=f"Session dir missing before enqueue: {session_dir}",
             )
-        # Pragmatic barrier: container FS + large ZIP extraction can lag visibility to the worker.
-        time.sleep(1)
         queue = _get_queue()
         queue.enqueue("backend.worker.run_pipeline", session_id)
     except redis.exceptions.RedisError as e:
@@ -173,4 +177,4 @@ async def upload_session(file: UploadFile):
         resp["duration_s"] = round(float(preflight.duration_s), 2)
     if preflight.approx_hz is not None:
         resp["approx_hz"] = round(float(preflight.approx_hz), 2)
-    return resp
+    return JSONResponse(content=resp, status_code=202)

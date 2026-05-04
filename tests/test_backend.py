@@ -139,7 +139,7 @@ class TestUploadEndpoint:
             "/api/upload-session",
             files={"file": ("session.zip", data, "application/zip")},
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 202
         body = resp.json()
         assert "session_id" in body
         assert body["status"] == "processing"
@@ -633,7 +633,7 @@ class TestDuplicateUpload:
             "/api/upload-session",
             files={"file": ("session.zip", data, "application/zip")},
         )
-        assert resp1.status_code == 200
+        assert resp1.status_code == 202
         sid1 = resp1.json()["session_id"]
 
         resp2 = client.post(
