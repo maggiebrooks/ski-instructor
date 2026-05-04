@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 
@@ -65,6 +65,7 @@ export default function Upload() {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -95,6 +96,29 @@ export default function Upload() {
 
   const triggerBrowse = () => inputRef.current?.click()
 
+  const handleDragEnter = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+    const next = e.relatedTarget as Node | null
+    if (next && e.currentTarget.contains(next)) return
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const list = e.dataTransfer.files
+    pickFiles(list.length > 0 ? list : null)
+  }
+
   return (
     <div className="upload-light-page">
       <div className="upload-light-inner">
@@ -111,7 +135,17 @@ export default function Upload() {
           feedback in under 60 seconds.
         </p>
 
-        <label htmlFor={inputId} className="upload-drop-card" style={{ cursor: 'pointer', display: 'block' }}>
+        <label
+          htmlFor={inputId}
+          className={
+            'upload-drop-card' + (isDragging ? ' upload-drop-card--dragging' : '')
+          }
+          style={{ cursor: 'pointer', display: 'block' }}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             ref={inputRef}
             id={inputId}

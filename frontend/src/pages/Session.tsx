@@ -8,15 +8,6 @@ const SESSION_POLL_MAX_FAILURES_DEFAULT = 8
 const SESSION_POLL_MAX_FAILURES_404 = 2
 const SESSION_POLL_INTERVAL_MS = 2000
 
-const PROCESSING_STEP_LABELS = [
-  'Validating upload',
-  'Parsing sensors',
-  'Detecting turns',
-  'Scoring technique',
-  'Generating insights',
-  'Building report',
-] as const
-
 const METRIC_COACHING: Record<string, string> = {
   turn_rhythm:
     'Next run: focus on smoother, more consistent timing between turns. Count a steady rhythm as you ski.',
@@ -120,25 +111,6 @@ function humanReadableStage(progress: string): string {
   if (s === 'generating_plots') return 'Almost done…'
   if (s === 'complete') return 'Complete.'
   return 'Processing…'
-}
-
-function processingUiStep(progress: string): number {
-  const s = progress.toLowerCase()
-  if (s === 'generating_plots') return 5
-  if (s === 'generating_report' || s === 'analyzing') return 4
-  if (s === 'running_pipeline') return 2
-  if (s === 'parsing_sensor_data' || s === 'processing') return 1
-  if (s === 'queued') return 0
-  return 0
-}
-
-function isProcessingStepDone(stepIndex: number, current: number): boolean {
-  if (current >= 4 && stepIndex === 3) return true
-  return stepIndex < current
-}
-
-function isProcessingStepCurrent(stepIndex: number, current: number): boolean {
-  return stepIndex === current
 }
 
 function extractTimestampMs(sessionId: string): number | null {
@@ -366,54 +338,17 @@ function ProcessingView({
   progress: string
   stageOverride?: string
 }) {
-  const cur = processingUiStep(progress)
   const stageText = stageOverride ?? humanReadableStage(progress)
 
   return (
     <div className="processing-light-wrap">
-      <div className="processing-light-card">
-        <div className="processing-light-bar-track">
-          <div className="processing-light-bar-fill" />
-        </div>
+      <div className="processing-light-card" role="status" aria-live="polite" aria-busy="true">
         <div className="processing-light-top">
           <span className="upload-wordmark">Ski Recorder</span>
         </div>
         <div className="processing-light-id">{sessionId}</div>
+        <div className="processing-indeterminate-spinner" aria-hidden />
         <p className="processing-light-stage">{stageText}</p>
-        <div className="processing-stepper" role="list">
-          {PROCESSING_STEP_LABELS.map((label, i) => {
-            const done = isProcessingStepDone(i, cur)
-            const current = isProcessingStepCurrent(i, cur)
-            return (
-              <div
-                key={label}
-                className={'processing-step-row' + (done ? ' processing-step-row--done' : '')}
-                role="listitem"
-              >
-                {done ? (
-                  <div className="processing-step-circle processing-step-circle--done" aria-hidden>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="M2 6l2.5 3L10 3"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                ) : current ? (
-                  <div className="processing-step-circle processing-step-circle--current" aria-hidden>
-                    <span className="processing-step-dot" />
-                  </div>
-                ) : (
-                  <div className="processing-step-circle processing-step-circle--future" aria-hidden />
-                )}
-                <span className="processing-step-label">{label}</span>
-              </div>
-            )
-          })}
-        </div>
         <p className="processing-light-eta">Usually takes 30–90 seconds</p>
       </div>
     </div>

@@ -1,3 +1,5 @@
+// NOTE: unused — processing UI is inline in Session.tsx. Remove before public launch.
+
 /** Canonical pipeline order (new + terminal). */
 const ORDERED_STAGES = [
   'queued',
