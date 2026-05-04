@@ -192,11 +192,19 @@ a.btn {
 }
 
 .upload-light-sub {
-  margin: 0 0 32px;
+  margin: 0 0 12px;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.55;
   color: var(--color-text-secondary);
+}
+
+.upload-light-sub-caveat {
+  margin: 0 0 32px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--color-text-muted);
 }
 
 .upload-drop-card {
@@ -307,11 +315,27 @@ a.btn {
   text-align: center;
 }
 
+.upload-footer-stack {
+  text-align: center;
+}
+
 .upload-footer-line {
   margin-top: 24px;
   text-align: center;
   font-size: 13px;
   color: var(--color-text-muted);
+}
+
+.sample-download-link {
+  color: var(--color-accent);
+  font-size: 13px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.sample-download-link:hover {
+  text-decoration: underline;
 }
 
 .visually-hidden {
@@ -1071,4 +1095,80 @@ a.btn {
   font-size: 16px;
   line-height: 1.5;
   color: var(--color-text-muted);
+}
+
+/* --- Turn arc visualization (Session results) --- */
+@keyframes turn-arc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.turn-arc-viz-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.turn-arc-viz-svg {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.turn-arc-run-label {
+  fill: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.turn-arc-fall-line {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.turn-arc-viz-empty {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.turn-arc-viz-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.turn-arc-truncated-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.turn-arc-tooltip {
+  min-width: 180px;
+  max-width: 240px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card-hover);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.turn-arc-tooltip-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.turn-arc-tooltip-row {
+  margin: 0;
 }

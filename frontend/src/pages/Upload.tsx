@@ -131,8 +131,14 @@ export default function Upload() {
 
         <h1 className="upload-light-headline">Analyze Your Run</h1>
         <p className="upload-light-sub">
-          Upload a session recorded with Ski Recorder on iPhone. AI-powered technique
-          feedback in under 60 seconds.
+          Ski Recorder uses your iPhone&apos;s built-in motion sensors to record your ski sessions,
+          then analyzes your technique across six coaching dimensions used by PSIA-certified
+          instructors: edge control, rotary stability, pressure management, turn symmetry, turn
+          shape, and rhythm.
+        </p>
+        <p className="upload-light-sub upload-light-sub-caveat">
+          Upload a session ZIP recorded with the Ski Recorder iOS app to get started. Processing
+          runs on a free-tier server and typically takes 30–90 seconds.
         </p>
 
         <label
@@ -214,7 +220,21 @@ export default function Upload() {
 
         {error && <p className="upload-error-text">{error}</p>}
 
-        <p className="upload-footer-line">Recorded with Ski Recorder for iPhone</p>
+        <div className="upload-footer-stack">
+          <p className="upload-footer-line">
+            Don&apos;t have the iOS app yet? Download a sample session below to try the analyzer.
+          </p>
+          {/* Sample ZIP must be placed at frontend/public/sample-session.zip —
+              Vite serves public/ at root. File is gitignored if large;
+              add to .gitignore if needed. */}
+          <a
+            href="/sample-session.zip"
+            download="sample-session.zip"
+            className="sample-download-link"
+          >
+            ↓ Download sample session
+          </a>
+        </div>
       </div>
     </div>
   )
