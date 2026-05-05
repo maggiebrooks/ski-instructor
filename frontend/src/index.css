@@ -459,6 +459,31 @@ a.btn {
   gap: 10px;
 }
 
+.results-nav-delete {
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.results-nav-delete:hover {
+  color: var(--color-danger);
+}
+
+.results-nav-delete:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .icon-btn-light {
   display: inline-flex;
   align-items: center;
@@ -655,7 +680,16 @@ a.btn {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
+}
+
+.score-row-desc {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .score-row-light-name {
@@ -966,6 +1000,58 @@ a.btn {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 20px;
+}
+
+.next-run-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  margin-top: 24px;
+  text-align: center;
+}
+
+.next-run-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+.next-run-card-insight {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  max-width: 600px;
+  margin: 0 auto 24px;
+}
+
+.next-run-card-cta {
+  display: inline-block;
+  color: var(--color-accent);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-accent);
+  padding-bottom: 2px;
+}
+
+.next-run-card-cta:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 599px) {
+  .next-run-card-insight {
+    font-size: 18px;
+  }
+
+  .next-run-card {
+    padding: 24px 20px;
+  }
 }
 
 .results-footer-meta {

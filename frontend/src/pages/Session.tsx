@@ -46,6 +46,26 @@ const SCORE_LABELS: Record<(typeof SCORE_KEYS)[number], string> = {
   turn_efficiency: 'Turn Efficiency',
 }
 
+const SCORE_DESCRIPTIONS: Record<(typeof SCORE_KEYS)[number], string> = {
+  rotary_stability: 'How much your upper body rotates during turns. Higher is better.',
+  edge_consistency:
+    'How cleanly and consistently your skis grip the snow through each turn.',
+  pressure_management:
+    'How well you load and release the ski through the arc of the turn.',
+  turn_symmetry: 'How evenly matched your left and right turns are.',
+  turn_shape_consistency:
+    'How consistent and round your turn arcs are from run to run.',
+  turn_rhythm: 'How consistent your timing is between turns.',
+  turn_efficiency:
+    'How much speed you carry through turns versus scrubbing it off.',
+}
+
+/** Eventually deep-link to the iOS recorder app instead of web. */
+const RECORD_NEXT_RUN_URL = 'https://ski-instructor.vercel.app'
+
+const NEXT_RUN_FALLBACK_INSIGHT =
+  'Ski another run to get your personalized focus cue.'
+
 const METRIC_INSIGHT_HINTS: Record<(typeof SCORE_KEYS)[number], readonly string[]> = {
   rotary_stability: ['rotary', 'rotation', 'upper body', 'steering', 'shoulders', 'torso'],
   edge_consistency: ['edge', 'angles', 'tipping', 'ankles', 'knees', 'arc'],
@@ -745,6 +765,13 @@ export default function Session() {
           <Link to="/" className="btn btn-secondary">
             New Upload
           </Link>
+          <button
+            type="button"
+            className="results-nav-delete"
+            onClick={() => void handleDeleteSession()}
+          >
+            Delete
+          </button>
         </div>
       </nav>
 
@@ -796,6 +823,7 @@ export default function Session() {
                   <span className="score-row-light-name">{SCORE_LABELS[key]}</span>
                   <span className="score-row-light-val">{formatMovementScoreOutOf100(raw)}</span>
                 </div>
+                <p className="score-row-desc">{SCORE_DESCRIPTIONS[key]}</p>
                 <div className="score-bar-track-light">
                   <div
                     className="score-bar-fill-light"
@@ -956,15 +984,27 @@ export default function Session() {
         )}
       </div>
 
-      {footerText ? <footer className="results-footer-meta">{footerText}</footer> : null}
+      <section className="next-run-card" aria-labelledby="next-run-heading">
+        <h2 id="next-run-heading" className="next-run-card-label">
+          Your focus for next time
+        </h2>
+        <p className="next-run-card-insight">{topInsight ?? NEXT_RUN_FALLBACK_INSIGHT}</p>
+        {topInsight ? (
+          <>
+            {/* Eventually deep-link to the iOS app instead of web */}
+            <a
+              href={RECORD_NEXT_RUN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="next-run-card-cta"
+            >
+              → Record your next run
+            </a>
+          </>
+        ) : null}
+      </section>
 
-      <button
-        type="button"
-        className="delete-link-light"
-        onClick={() => void handleDeleteSession()}
-      >
-        Delete this session
-      </button>
+      {footerText ? <footer className="results-footer-meta">{footerText}</footer> : null}
     </div>
   )
 }
