@@ -11,19 +11,19 @@ const SESSION_POLL_INTERVAL_MS = 2000
 
 const METRIC_COACHING: Record<string, string> = {
   turn_rhythm:
-    'Next run: focus on smoother, more consistent timing between turns. Count a steady rhythm as you ski.',
+    'Your turn timing is inconsistent — some turns are rushed, others too drawn out. Try counting a quiet rhythm as you ski: one for the initiation, two for the fall line, three for the finish. Consistency here will make everything else feel smoother.',
   pressure_management:
-    'Next run: apply pressure earlier in the turn; exaggerate it at initiation.',
+    'Drive your shins into the boot tongues earlier through the fall line and keep your hands forward — that centers you over the outside ski when it matters most.',
   edge_consistency:
-    'Next run: commit to stronger edge angles through the middle of each turn.',
+    'Build edge angle progressively from initiation to the fall line — let ankles and knees tip into the hill so each turn bites in the same place.',
   rotary_stability:
-    'Next run: reduce upper body rotation and let your skis guide the turn.',
+    'Quiet the upper body and let your legs steer — keep shoulders facing down the hill more of the turn so rotation does not replace clean edging.',
   turn_symmetry:
-    'Next run: match your left and right turns with equal weight and shape.',
+    'Spend a few runs mirroring your stronger side on the weaker one — match pressure, shape, and timing left and right.',
   turn_shape_consistency:
-    'Next run: aim for more consistent turn shapes instead of mixing sharp and wide turns.',
+    'Aim for a more uniform turn size — mixing very short and very long arcs on the same run makes rhythm and line harder to trust.',
   turn_efficiency:
-    'Next run: stay balanced and flowing; avoid unnecessary skidding or braking.',
+    'Look for flow turn to turn — ease off unnecessary braking and let the ski run when the slope allows; smooth speed control reads as efficiency.',
 }
 
 const SCORE_KEYS = [
@@ -158,9 +158,10 @@ function formatBreadcrumbDate(sessionId: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function formatDuration(s: number): string {
-  const mins = Math.floor(s / 60)
-  const secs = Math.round(s % 60)
+function formatDuration(seconds: number): string {
+  const totalSeconds = Math.round(seconds)
+  const mins = Math.floor(totalSeconds / 60)
+  const secs = totalSeconds % 60
   return `${mins}m ${secs}s`
 }
 
@@ -201,9 +202,31 @@ function insightForMetric(
 }
 
 function overallScoreFromReport(scores: Record<string, number | null>): number | null {
-  const vals = SCORE_KEYS.map((k) => scores[k]).filter((v): v is number => v != null)
+  const vals = SCORE_KEYS.map((k) => scores[k]).filter(
+    (v): v is number => typeof v === 'number' && Number.isFinite(v),
+  )
   if (vals.length === 0) return null
   return (vals.reduce((a, b) => a + b, 0) / vals.length) * 100
+}
+
+/** null, undefined, or non-finite → em dash; else N/100 for movement scores. */
+function formatMovementScoreOutOf100(raw: number | null | undefined): string {
+  if (raw === null || raw === undefined) return '—'
+  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '—'
+  return `${Math.round(raw * 100)}/100`
+}
+
+function movementScoreFraction01(raw: number | null | undefined): number | null {
+  if (raw === null || raw === undefined) return null
+  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return null
+  return raw
+}
+
+/** null, undefined, or non-finite → em dash; else rounded percent 0–100 (no /100 suffix). */
+function formatCoachScorePill01(raw: number | null | undefined): string {
+  if (raw === null || raw === undefined) return '—'
+  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '—'
+  return String(Math.round(raw * 100))
 }
 
 function scoreDisplayColor(score: number | null): string {
@@ -756,13 +779,14 @@ export default function Session() {
           )}
           {SCORE_KEYS.map((key, idx) => {
             const raw = scores[key]
-            const val = raw != null ? raw * 100 : null
-            const pct = raw != null ? Math.max(0, Math.min(100, val ?? 0)) : 0
+            const n = movementScoreFraction01(raw)
+            const val = n != null ? n * 100 : null
+            const pct = n != null ? Math.max(0, Math.min(100, val ?? 0)) : 0
             const showTip =
-              raw != null && raw < 0.6
+              n != null && n < 0.6
                 ? insightForMetric(key, coachingBodies) ?? METRIC_COACHING[key] ?? null
                 : null
-            const dim = raw == null
+            const dim = n == null
             return (
               <div
                 key={key}
@@ -770,9 +794,7 @@ export default function Session() {
               >
                 <div className="score-row-light-head">
                   <span className="score-row-light-name">{SCORE_LABELS[key]}</span>
-                  <span className="score-row-light-val">
-                    {raw != null && val != null ? `${val.toFixed(0)}/100` : '-'}
-                  </span>
+                  <span className="score-row-light-val">{formatMovementScoreOutOf100(raw)}</span>
                 </div>
                 <div className="score-bar-track-light">
                   <div
@@ -889,10 +911,7 @@ export default function Session() {
                   const def = coachCardDefs[i]
                   const body = coachingBodies[i]
                   const tier = coachScoreTier(def.tierScore)
-                  const pill =
-                    def.tierScore != null && Number.isFinite(def.tierScore)
-                      ? String(Math.round(def.tierScore * 100))
-                      : '-'
+                  const pill = formatCoachScorePill01(def.tierScore)
                   return (
                     <div
                       key={`coach-${i}-${def.label}`}

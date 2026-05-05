@@ -49,26 +49,33 @@ SCORE_PRIORITY = [
 
 METRIC_ACTION_MAP = {
     "turn_rhythm": (
-        "Next run: focus on smoother, more consistent timing between turns. "
-        "Count a steady rhythm as you ski."
+        "Your turn timing is inconsistent — some turns are rushed, others too drawn out. "
+        "Try counting a quiet rhythm as you ski: one for the initiation, two for the fall line, "
+        "three for the finish. Consistency here will make everything else feel smoother."
     ),
     "pressure_management": (
-        "Next run: apply pressure earlier in the turn; exaggerate it at initiation."
+        "Drive your shins into the boot tongues earlier through the fall line and keep your "
+        "hands forward — that centers you over the outside ski when it matters most."
     ),
     "edge_consistency": (
-        "Next run: commit to stronger edge angles through the middle of each turn."
+        "Build edge angle progressively from initiation to the fall line — let ankles and "
+        "knees tip into the hill so each turn bites in the same place."
     ),
     "rotary_stability": (
-        "Next run: reduce upper body rotation and let your skis guide the turn."
+        "Quiet the upper body and let your legs steer — keep shoulders facing down the hill "
+        "more of the turn so rotation does not replace clean edging."
     ),
     "turn_symmetry": (
-        "Next run: match your left and right turns with equal weight and shape."
+        "Spend a few runs mirroring your stronger side on the weaker one — match pressure, "
+        "shape, and timing left and right."
     ),
     "turn_shape_consistency": (
-        "Next run: aim for more consistent turn shapes instead of mixing sharp and wide turns."
+        "Aim for a more uniform turn size — mixing very short and very long arcs on the same "
+        "run makes rhythm and line harder to trust."
     ),
     "turn_efficiency": (
-        "Next run: stay balanced and flowing; avoid unnecessary skidding or braking."
+        "Look for flow turn to turn — ease off unnecessary braking and let the ski run when "
+        "the slope allows; smooth speed control reads as efficiency."
     ),
 }
 
@@ -81,20 +88,18 @@ def _generate_actionable_top_insight(scores: dict) -> str:
         if k in SCORE_PRIORITY and v is not None
     }
     if not movement:
-        return "Next run: focus on smooth, controlled skiing and consistent turns."
+        return (
+            "Focus on smooth, controlled skiing and consistent turns — "
+            "that foundation makes every fundamental easier to refine."
+        )
 
     worst_metric = min(movement, key=movement.get)
-    worst_score = float(movement[worst_metric])
 
-    action = METRIC_ACTION_MAP.get(
+    return METRIC_ACTION_MAP.get(
         worst_metric,
-        "Next run: focus on smoother, more controlled turns overall.",
+        "Smooth out timing and line from turn to turn — when the basics feel predictable, "
+        "pressure and edging get easier to adjust.",
     )
-
-    if worst_score < 0.20:
-        return f"Priority fix: {action}"
-
-    return action
 
 
 def _compute_top_insight(scores: dict, *args, **kwargs) -> str:
@@ -369,7 +374,10 @@ class TurnInsights:
             "torso_rotation_ratio": None,
             "left_turns": 0,
             "right_turns": 0,
-            "top_insight": "Next run: focus on making smooth, controlled turns.",
+            "top_insight": (
+                "Focus on smooth, controlled skiing and consistent turns — "
+                "that foundation makes every fundamental easier to refine."
+            ),
         }
 
         if turns.empty or len(turns) == 0:

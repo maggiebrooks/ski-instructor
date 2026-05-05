@@ -365,7 +365,8 @@ class TestComputeMovementScores:
         assert scores["pressure_ratio"] is None
         assert scores["torso_rotation_ratio"] is None
         assert scores.get("top_insight") == (
-            "Next run: focus on making smooth, controlled turns."
+            "Focus on smooth, controlled skiing and consistent turns — "
+            "that foundation makes every fundamental easier to refine."
         )
 
     def test_top_insight_targets_weakest_score(self, insights):

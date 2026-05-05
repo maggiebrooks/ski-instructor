@@ -863,13 +863,16 @@ a.btn {
 
 .coach-card-head {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   gap: 12px;
 }
 
 .coach-card-cat {
-  display: inline-flex;
+  display: flex;
+  flex: 1;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -879,6 +882,7 @@ a.btn {
   font-size: 14px;
   line-height: 1;
   flex-shrink: 0;
+  margin-inline-end: 0.25em;
 }
 
 .coach-card-title {
