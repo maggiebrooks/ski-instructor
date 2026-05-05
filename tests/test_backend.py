@@ -274,6 +274,7 @@ class TestWorkerPipeline:
     def test_run_pipeline_produces_report(self, tmp_path):
         """Full integration: run_pipeline -> report.json."""
         from backend.worker import run_pipeline
+        from transformations.process_session import PROCESSING_VERSION
 
         session_id = "test_integration_session"
 
@@ -304,7 +305,7 @@ class TestWorkerPipeline:
 
         assert report["session_id"] == session_id
         assert report["status"] == "complete"
-        assert report["processing_version"] == "2.0.0"
+        assert report["processing_version"] == PROCESSING_VERSION
         assert "summary" in report
         assert "scores" in report
         assert "insights" in report

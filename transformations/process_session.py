@@ -26,7 +26,7 @@ from features.modules.carving_phase_module import (
 
 logger = logging.getLogger(__name__)
 
-PROCESSING_VERSION = "2.0.0"
+PROCESSING_VERSION = "2.1.0"
 
 ACTIVE_FEATURE_MODULES = [
     PelvisTurnModule(),
