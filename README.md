@@ -74,25 +74,6 @@ React results dashboard
 
 ---
 
-## Project status and roadmap
-
-This is an active solo build. Current state:
-
-- Full pipeline working end to end with real session data
-- 160 unit tests across pipeline, analytics, scoring, and metadata
-- Deployed and publicly accessible (demo mode — sample data only)
-- Physics-based normalization validated on real runs
-
-**Months 1–6 (now):** Infrastructure polish, PostgreSQL migration, auth layer, Render deployment stability
-
-**Months 7–12:** Closed beta with ~30 skiers across ability levels. Collecting labeled ground truth data.
-
-**Months 13–18:** Train ML models on labeled beta data to replace rule-based heuristics. App Store submission.
-
-The rule-based scoring is intentionally conservative — it's designed to produce defensible results on limited data while the labeled dataset is being built. Accuracy integrity is the top priority; the ML layer doesn't ship until there's enough real data to validate it properly.
-
----
-
 ## Known limitations
 
 - **Single sensor placement** (belly/front jacket pocket). Dual-sensor setup (chest + boot) would unlock upper/lower body separation, which is the next hardware iteration.
@@ -140,4 +121,4 @@ Maggie Brooks — full-stack engineer, PSIA Level 1 ski instructor, former Team 
 
 The project came from a real problem: ski instruction is almost entirely visual and verbal, with no objective data layer. Ski Recorder is an attempt to build that data layer in a way that complements coaching rather than replacing it.
 
-[maggiebrooks.com](https://maggiebrooks.com) · [LinkedIn](https://linkedin.com/in/maggiebrooks)
+[maggie-brooks.com](https://maggie-brooks.com) · [LinkedIn](https://www.linkedin.com/in/maggie-margaret-brooks-6017601b6/)
