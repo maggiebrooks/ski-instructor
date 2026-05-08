@@ -15,7 +15,7 @@ PERSISTENT_DIR = Path(os.getenv("PERSISTENT_DIR", str(BASE_DIR)))
 # Storage: "local" (default) or "s3"
 STORAGE_MODE = os.getenv("STORAGE_MODE", "local")
 
-# Session artifact directories — live on the persistent volume so they survive
+# Session artifact directories: live on the persistent volume so they survive
 # deploys.
 RAW_DIR = Path(os.getenv("RAW_DIR", str(PERSISTENT_DIR / "sessions" / "raw")))
 PROCESSED_DIR = Path(os.getenv("PROCESSED_DIR", str(PERSISTENT_DIR / "sessions" / "processed")))
@@ -28,10 +28,10 @@ LOGS_DIR = PERSISTENT_DIR / "logs"
 for _d in (RAW_DIR, PROCESSED_DIR, PLOTS_DIR, DATA_DIR, LOGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
-# Database — SQLite on the persistent volume.
+# Database: SQLite on the persistent volume.
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR / 'ski.db'}")
 
-# Redis — on Railway set REDIS_URL from your Redis service (never rely on bare localhost in prod)
+# Redis: on Railway set REDIS_URL from your Redis service (never rely on bare localhost in prod)
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 redis_client = redis.from_url(REDIS_URL)
 
@@ -59,3 +59,5 @@ RAW_DELETE_REQUIRES_PROCESSED = os.getenv("RAW_DELETE_REQUIRES_PROCESSED", "true
     "true",
     "yes",
 )
+
+API_KEY = os.getenv("API_KEY", "")  # Required in production; empty = disabled (dev only)

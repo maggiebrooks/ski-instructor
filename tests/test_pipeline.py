@@ -373,7 +373,7 @@ class TestDiscoverSessions:
         s2 = tmp_path / "Session_B"
         s2.mkdir()
         (s2 / "Accelerometer.csv").write_text("time,x,y,z\n")
-        # Missing Gyroscope.csv — should not be discovered
+        # Missing Gyroscope.csv; should not be discovered
 
         sessions = discover_sessions(str(tmp_path))
         assert len(sessions) == 1

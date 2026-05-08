@@ -693,15 +693,15 @@ class TestMetadataEndpoint:
 
         session_dir = tmp_path / "raw" / "sess_meta"
         session_dir.mkdir(parents=True)
-        session_meta = {"skier": "maggie", "ski": "test_ski", "resort": "Aspen"}
+        session_meta = {"skier": "skier_01", "ski": "test_ski", "resort": "Aspen"}
         with open(session_dir / "metadata.yaml", "w") as f:
             yaml.dump(session_meta, f)
 
         profiles_dir = tmp_path / "profiles"
         (profiles_dir / "skiers").mkdir(parents=True)
         (profiles_dir / "skis").mkdir(parents=True)
-        with open(profiles_dir / "skiers" / "maggie.yaml", "w") as f:
-            yaml.dump({"name": "Maggie", "level": "advanced"}, f)
+        with open(profiles_dir / "skiers" / "skier_01.yaml", "w") as f:
+            yaml.dump({"name": "Skier 01", "level": "advanced"}, f)
         with open(profiles_dir / "skis" / "test_ski.yaml", "w") as f:
             yaml.dump({"model": "Sheeva 10", "length_cm": 158}, f)
 
@@ -711,7 +711,7 @@ class TestMetadataEndpoint:
             patch("backend.routes.metadata.MetadataLoader",
                   return_value=MagicMock(
                       load_session_metadata=lambda p: session_meta if "sess_meta" in str(p) else None,
-                      load_skier_profile=lambda sid: {"name": "Maggie", "level": "advanced"} if sid == "maggie" else None,
+                      load_skier_profile=lambda sid: {"name": "Skier 01", "level": "advanced"} if sid == "skier_01" else None,
                       load_ski_profile=lambda sid: {"model": "Sheeva 10", "length_cm": 158} if sid == "test_ski" else None,
                   )),
         ):
@@ -719,7 +719,7 @@ class TestMetadataEndpoint:
         assert resp.status_code == 200
         body = resp.json()
         assert body["session"]["resort"] == "Aspen"
-        assert body["skier"]["name"] == "Maggie"
+        assert body["skier"]["name"] == "Skier 01"
         assert body["ski"]["model"] == "Sheeva 10"
 
 

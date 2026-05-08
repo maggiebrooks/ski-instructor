@@ -71,22 +71,22 @@ export default function UploadScreen({
       <Text style={styles.title}>Session ready</Text>
 
       <View style={styles.summary}>
-        <Row label="Duration" value={fromRecording ? formatDuration(durationSec) : '— (file pick)'} />
-        <Row label="Accel samples" value={fromRecording ? accelCount.toLocaleString() : '—'} />
-        <Row label="Gyro samples" value={fromRecording ? gyroCount.toLocaleString() : '—'} />
-        <Row label="GPS samples" value={fromRecording ? gpsCount.toLocaleString() : '—'} />
-        <Row label="Baro samples" value={fromRecording ? baroCount.toLocaleString() : '—'} />
+        <Row label="Duration" value={fromRecording ? formatDuration(durationSec) : '- (file pick)'} />
+        <Row label="Accel samples" value={fromRecording ? accelCount.toLocaleString() : '-'} />
+        <Row label="Gyro samples" value={fromRecording ? gyroCount.toLocaleString() : '-'} />
+        <Row label="GPS samples" value={fromRecording ? gpsCount.toLocaleString() : '-'} />
+        <Row label="Baro samples" value={fromRecording ? baroCount.toLocaleString() : '-'} />
         <Row
           label="GPS available"
-          value={fromRecording ? (gpsAvailable ? 'Yes' : 'No') : '—'}
+          value={fromRecording ? (gpsAvailable ? 'Yes' : 'No') : '-'}
         />
         <SessionQualityRow tier={qualityTier} detail={qualitySummary} />
         {qualityTier === 'red' ? (
           <Text style={styles.qualityRedNote}>
-            Low sensor quality — results may be less accurate
+            Low sensor quality: results may be less accurate
           </Text>
         ) : null}
-        <Row label="Size" value={sizeBytes ? formatSize(sizeBytes) : '—'} />
+        <Row label="Size" value={sizeBytes ? formatSize(sizeBytes) : '-'} />
         <Row label="File" value={filename} />
       </View>
 
@@ -152,7 +152,7 @@ function SessionQualityRow({
 }) {
   const label = 'Session Quality';
   if (!tier || !detail) {
-    return <Row label={label} value="—" />;
+    return <Row label={label} value="-" />;
   }
   const valueColor =
     tier === 'green' ? colors.success : tier === 'yellow' ? colors.warning : colors.danger;

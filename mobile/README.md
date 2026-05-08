@@ -4,7 +4,7 @@ A standalone iOS/Android session recorder for the ski-ai project. It captures
 four sensor streams, packages them into a SensorLogger-compatible ZIP, and
 uploads to the existing FastAPI backend at `POST /api/upload-session`.
 
-The web app is unchanged — this app is **only** the record → upload client.
+The web app is unchanged; this app is **only** the record → upload client.
 Processed results are shown inside this app on the Results screen (and are
 also available in the web frontend at the same URL).
 
@@ -17,7 +17,7 @@ also available in the web frontend at the same URL).
 | GPS / Location  | `expo-location` (`Accuracy.BestForNavigation`, `watchPositionAsync`) | 1 Hz | `Location.csv` |
 | Barometer       | `expo-sensors`     | 1 Hz    | `Barometer.csv`     |
 
-All four CSVs sit at the **top level** of the ZIP — no subdirectory.
+All four CSVs sit at the **top level** of the ZIP (no subdirectory).
 
 `time` is **nanoseconds since the Unix epoch** (`Date.now() * 1e6`) and
 `seconds_elapsed` is `(time - sessionStartTime) / 1e9` where
@@ -140,13 +140,13 @@ SensorLogger ZIP from the OS file picker and uses the same upload endpoint.
 The Record screen requests three permissions on mount, **before** the Start
 button is shown:
 
-1. **Motion & Fitness** (accelerometer + gyroscope) — *required*. If denied,
+1. **Motion & Fitness** (accelerometer + gyroscope): *required*. If denied,
    recording is blocked and the screen shows a button that opens
    `Settings → Privacy & Security → Motion & Fitness → Ski Recorder`.
-2. **Location (When In Use)** — *recommended*. If denied, recording still
+2. **Location (When In Use)**: *recommended*. If denied, recording still
    works but a yellow warning explains that turn detection and speed metrics
    will be limited (no GPS track).
-3. **Barometer** — no permission prompt exists on iOS or Android; it just
+3. **Barometer**: no permission prompt exists on iOS or Android; it just
    works on devices that have one (every iPhone since the 6, every modern
    Pixel and most flagship Androids).
 
@@ -218,7 +218,7 @@ npm run tsc
   works; the warning banner on the Record screen explains the limitation.
 - **Barometer samples stay at 0**: device has no barometer (rare on modern
   phones, but possible on older Androids and iPhones older than the iPhone 6).
-  The pipeline degrades gracefully — `segment_runs()` falls back to a single
+  The pipeline degrades gracefully: `segment_runs()` falls back to a single
   skiing run when `relativeAltitude` is missing.
 - **Upload says "not a valid ZIP archive"**: the backend now has an
   `unzip` fallback for iOS-style ZIPs (`backend/routes/upload.py`); make sure

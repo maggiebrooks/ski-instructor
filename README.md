@@ -2,9 +2,9 @@
 
 **Sensor-based ski analytics platform that turns iPhone IMU data into biomechanical technique scores.**
 
-A skier records a run using the iOS app. The app captures accelerometer, gyroscope, barometer, and GPS data at up to 100 Hz. That session uploads to a FastAPI backend, moves through a signal processing pipeline, and produces scored feedback across seven movement dimensions aligned with PSIA instructor methodology — in about 60 seconds.
+A skier records a run using the iOS app. The app captures accelerometer, gyroscope, barometer, and GPS data at up to 100 Hz. That session uploads to a FastAPI backend, moves through a signal processing pipeline, and produces scored feedback across seven movement dimensions aligned with PSIA instructor methodology in about 60 seconds.
 
-**Live demo:** https://ski-instructor.vercel.app — includes a sample session download if you want to see the full pipeline run end to end.
+**Live demo:** https://ski-instructor.vercel.app. It includes a sample session download if you want to see the full pipeline run end to end.
 
 ---
 
@@ -38,14 +38,14 @@ Results include an overall score, per-dimension breakdowns with progress bars, t
 
 | Layer | Technology |
 |---|---|
-| Mobile | Expo React Native (iOS) — IMU + GPS recording |
+| Mobile | Expo React Native (iOS): IMU + GPS recording |
 | Frontend | React 19 + Vite + TypeScript |
 | Backend | FastAPI (Python) |
 | Job queue | RQ + Redis |
 | Database | SQLite → PostgreSQL migration planned Nov 2026 |
 | Deployment | Vercel (frontend) · Render (backend + worker) |
 | Signal processing | NumPy · SciPy · Pandas |
-| Testing | pytest — 224 tests |
+| Testing | pytest: 224 tests |
 
 ---
 
@@ -78,8 +78,8 @@ React results dashboard
 
 - **Single sensor placement** (belly/front jacket pocket). Dual-sensor setup (chest + boot) would unlock upper/lower body separation, which is the next hardware iteration.
 - **Turn detection parameters** (`height=0.5`, `distance=20`) are starting values tuned for groomed intermediate terrain. Per-terrain calibration is on the roadmap.
-- **Phone placement variance** — jacket movement introduces noise. The Butterworth filter attenuates most of it but placement consistency matters, which is why phone placement is standardized in the recording protocol.
-- **Altitude-only segmentation** — adding gyroscope + speed confirmation would improve turn boundary accuracy on flat or variable terrain.
+- **Phone placement variance:** jacket movement introduces noise. The Butterworth filter attenuates most of it but placement consistency matters, which is why phone placement is standardized in the recording protocol.
+- **Altitude-only segmentation:** adding gyroscope + speed confirmation would improve turn boundary accuracy on flat or variable terrain.
 
 ---
 
@@ -117,7 +117,7 @@ python -m pytest tests/ -v
 
 ## Built by
 
-Maggie Brooks — full-stack engineer, PSIA Level 1 ski instructor, former Team USA synchronized figure skater.
+Maggie Brooks: full-stack engineer, PSIA Level 1 ski instructor, former Team USA synchronized figure skater.
 
 The project came from a real problem: ski instruction is almost entirely visual and verbal, with no objective data layer. Ski Recorder is an attempt to build that data layer in a way that complements coaching rather than replacing it.
 

@@ -49,15 +49,15 @@ class PelvisTurnModule(FeatureModule):
 
         return {
             "sensor_source": "pelvis_phone",
-            "time_s": round(float(secs[peak_pos]), 1),
+            "time_s": float(secs[peak_pos]),
             "direction": "left" if angle_deg < 0 else "right",
-            "duration_s": round(float(duration), 2),
-            "speed_at_apex_kmh": round(speed_kmh, 1),
-            "pelvis_turn_angle_deg": round(angle_deg, 1),
-            "pelvis_peak_rotation_rate": round(peak_gz, 3),
-            "pelvis_turn_radius_m": (round(radius, 1) if radius is not None
+            "duration_s": float(duration),
+            "speed_at_apex_kmh": float(speed_kmh),
+            "pelvis_turn_angle_deg": float(angle_deg),
+            "pelvis_peak_rotation_rate": float(peak_gz),
+            "pelvis_turn_radius_m": (float(radius) if radius is not None
                                      else None),
-            "pelvis_max_roll_angle_deg": round(edge_range_deg, 1),
-            "pelvis_peak_g_force": round(g_force, 2),
-            "pelvis_symmetry": round(symmetry, 2),
+            "pelvis_max_roll_angle_deg": float(edge_range_deg),
+            "pelvis_peak_g_force": float(g_force),
+            "pelvis_symmetry": float(symmetry),
         }

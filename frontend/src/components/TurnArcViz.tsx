@@ -373,7 +373,7 @@ export default function TurnArcViz({ runs, width = 600, height = 400 }: TurnArcV
           <div className="turn-arc-tooltip-row">
             Radius:{' '}
             {tooltip.turn.pelvis_turn_radius_m == null
-              ? '—'
+              ? '-'
               : `${tooltip.turn.pelvis_turn_radius_m} m`}
           </div>
           <div className="turn-arc-tooltip-row">
@@ -383,7 +383,7 @@ export default function TurnArcViz({ runs, width = 600, height = 400 }: TurnArcV
             Confidence:{' '}
             {tooltip.turn.confidence != null && Number.isFinite(tooltip.turn.confidence)
               ? `${Math.round(tooltip.turn.confidence * 100)}%`
-              : '—'}
+              : '-'}
           </div>
         </div>
       )}

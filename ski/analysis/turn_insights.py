@@ -36,6 +36,11 @@ from ski.analysis.turn_analyzer import TurnAnalyzer
 
 MIN_TURNS_FOR_SCORES = 5
 
+# Empirical midpoint of typical deg/s range for recreational skiing. Rescales the raw
+# pelvis_edge_build_progressiveness value so clip(..., 0, 1) produces meaningful
+# variation across [0, 1] rather than saturating. See algorithm-spec.md §3.3.
+EDGE_PROGRESSIVENESS_SCALE = 45.0
+
 # Order used to break ties when choosing the weakest movement score for coaching.
 SCORE_PRIORITY = [
     "turn_rhythm",
@@ -49,32 +54,32 @@ SCORE_PRIORITY = [
 
 METRIC_ACTION_MAP = {
     "turn_rhythm": (
-        "Your turn timing is inconsistent — some turns are rushed, others too drawn out. "
+        "Your turn timing is inconsistent: some turns are rushed, others too drawn out. "
         "Try counting a quiet rhythm as you ski: one for the initiation, two for the fall line, "
         "three for the finish. Consistency here will make everything else feel smoother."
     ),
     "pressure_management": (
         "Drive your shins into the boot tongues earlier through the fall line and keep your "
-        "hands forward — that centers you over the outside ski when it matters most."
+        "hands forward so that you stay centered over the outside ski when it matters most."
     ),
     "edge_consistency": (
-        "Build edge angle progressively from initiation to the fall line — let ankles and "
+        "Build edge angle progressively from initiation to the fall line. Let ankles and "
         "knees tip into the hill so each turn bites in the same place."
     ),
     "rotary_stability": (
-        "Quiet the upper body and let your legs steer — keep shoulders facing down the hill "
+        "Quiet the upper body and let your legs steer; keep shoulders facing down the hill "
         "more of the turn so rotation does not replace clean edging."
     ),
     "turn_symmetry": (
-        "Spend a few runs mirroring your stronger side on the weaker one — match pressure, "
+        "Spend a few runs mirroring your stronger side on the weaker one and match pressure, "
         "shape, and timing left and right."
     ),
     "turn_shape_consistency": (
-        "Aim for a more uniform turn size — mixing very short and very long arcs on the same "
+        "Aim for a more uniform turn size. Mixing very short and very long arcs on the same "
         "run makes rhythm and line harder to trust."
     ),
     "turn_efficiency": (
-        "Look for flow turn to turn — ease off unnecessary braking and let the ski run when "
+        "Look for flow turn to turn: ease off unnecessary braking and let the ski run when "
         "the slope allows; smooth speed control reads as efficiency."
     ),
 }
@@ -89,15 +94,15 @@ def _generate_actionable_top_insight(scores: dict) -> str:
     }
     if not movement:
         return (
-            "Focus on smooth, controlled skiing and consistent turns — "
-            "that foundation makes every fundamental easier to refine."
+            "Focus on smooth, controlled skiing and consistent turns. "
+            "That foundation makes every fundamental easier to refine."
         )
 
     worst_metric = min(movement, key=movement.get)
 
     return METRIC_ACTION_MAP.get(
         worst_metric,
-        "Smooth out timing and line from turn to turn — when the basics feel predictable, "
+        "Smooth out timing and line from turn to turn. When the basics feel predictable, "
         "pressure and edging get easier to adjust.",
     )
 
@@ -300,6 +305,11 @@ class TurnInsights:
                         med_radius / ski_length_m, 2
                     )
 
+        # TODO(desk physics): Semantic zone bands (<0.6, 0.8–1.2, >1.2) are documented in
+        # docs/algorithm-spec.md §3.1; replacement tolerances will use noise-floor estimates
+        # from ski/analysis/diagnostics.py ``compute_pressure_ratio_diagnostics`` (logged in
+        # the worker). Do not change scoring thresholds here until that pass completes.
+        #
         # -- B. Pressure ratio (centripetal physics) --
         radius = df["pelvis_estimated_turn_radius"]
         speed = df["speed_at_apex"]
@@ -375,8 +385,8 @@ class TurnInsights:
             "left_turns": 0,
             "right_turns": 0,
             "top_insight": (
-                "Focus on smooth, controlled skiing and consistent turns — "
-                "that foundation makes every fundamental easier to refine."
+                "Focus on smooth, controlled skiing and consistent turns. "
+                "That foundation makes every fundamental easier to refine."
             ),
         }
 
@@ -440,7 +450,8 @@ class TurnInsights:
             edge_parts.append(float(1 - clip(radius_cv_raw, 0, 1)))
         med_edge_prog = _safe_median(edge_prog)
         if med_edge_prog is not None:
-            edge_parts.append(float(clip(med_edge_prog, 0, 1)))
+            scaled_edge_prog = float(med_edge_prog) / EDGE_PROGRESSIVENESS_SCALE
+            edge_parts.append(float(clip(scaled_edge_prog, 0, 1)))
         med_radius_stab = _safe_median(radius_stab)
         if med_radius_stab is not None:
             edge_parts.append(float(1 - clip(med_radius_stab, 0, 1)))
@@ -593,7 +604,7 @@ class TurnInsights:
         if pm is not None:
             if pm < 0.3:
                 text = (
-                    "Your weight is sitting back — focus on driving your shins into the "
+                    "Your weight is sitting back. Focus on driving your shins into the "
                     "front of your boots through the fall line. Think about keeping your "
                     "hands forward and in view."
                 )
@@ -605,7 +616,7 @@ class TurnInsights:
                 )
             else:
                 text = (
-                    "Solid fore/aft balance — you are staying centered over your skis "
+                    "Solid fore/aft balance: you are staying centered over your skis "
                     "through the turn. Keep it up."
                 )
             vals = [f"pressure management: {pm:.2f}"]
@@ -619,7 +630,7 @@ class TurnInsights:
             if ts < 0.4:
                 text = (
                     "There is a noticeable difference between your left and right turns. "
-                    "Pick your weaker side and spend a run focusing only on that direction — "
+                    "Pick your weaker side and spend a run focusing only on that direction and "
                     "match the feel of your stronger side."
                 )
             elif ts <= 0.7:
@@ -629,7 +640,7 @@ class TurnInsights:
                 )
             else:
                 text = (
-                    "Your left and right turns are well matched — that symmetry is a real "
+                    "Your left and right turns are well matched; that symmetry is a real "
                     "strength and shows good foot-to-foot balance."
                 )
             vals = [f"symmetry: {ts:.2f}"]
@@ -646,18 +657,18 @@ class TurnInsights:
             if rs < 0.4:
                 text = (
                     "Your upper body is doing a lot of the steering work. Try to keep your "
-                    "shoulders pointing downhill and let your legs do the turning — think hips "
+                    "shoulders pointing downhill and let your legs do the turning. Think hips "
                     "and below initiating each turn while your torso stays quiet."
                 )
             elif rs <= 0.7:
                 text = (
                     "Some upper body rotation is creeping in. Focus on keeping your pole swing "
-                    "relaxed and forward — it will help anchor your upper body and free up your "
+                    "relaxed and forward; it will help anchor your upper body and free up your "
                     "legs to carve."
                 )
             else:
                 text = (
-                    "Good rotary discipline — your upper body is staying calm and letting your "
+                    "Good rotary discipline: your upper body is staying calm and letting your "
                     "lower body drive the turns. That is the foundation of clean carved skiing."
                 )
             vals = [f"rotary stability: {rs:.2f}"]
@@ -671,18 +682,18 @@ class TurnInsights:
             if ec < 0.4:
                 text = (
                     "Your edges are not engaging consistently through the turn. Work on "
-                    "tipping your knees and ankles into the hill progressively — think of "
+                    "tipping your knees and ankles into the hill progressively. Think of "
                     "building edge angle gradually from turn initiation to the fall line."
                 )
             elif ec <= 0.7:
                 text = (
                     "Your edging is decent but inconsistent between turns. Try to feel the "
-                    "edge bite at the same point in every turn — a consistent tipping motion "
+                    "edge bite at the same point in every turn: a consistent tipping motion "
                     "from the ankle up."
                 )
             else:
                 text = (
-                    "Strong edge control — you are holding a clean arc through the turn. "
+                    "Strong edge control: you are holding a clean arc through the turn. "
                     "That kind of consistency is what separates good skiers from great ones."
                 )
             vals = [f"edge consistency: {ec:.2f}"]
@@ -695,7 +706,7 @@ class TurnInsights:
             combined = (pm + ec) / 2
             if combined < 0.4:
                 text = (
-                    "Pressure management needs attention — focus on one thing: staying forward "
+                    "Pressure management needs attention. Focus on one thing: staying forward "
                     "and tipping your edges earlier in each turn. Those two habits reinforce "
                     "each other."
                 )
@@ -707,7 +718,7 @@ class TurnInsights:
                 )
             else:
                 text = (
-                    "Excellent pressure management overall — you are loading and releasing the "
+                    "Excellent pressure management overall: you are loading and releasing the "
                     "ski efficiently through the turn."
                 )
             vals = [f"pressure: {combined:.2f}"]
@@ -719,7 +730,7 @@ class TurnInsights:
             gf = scores.get("g_force_avg")
             if pm < 0.4:
                 text = (
-                    "Pressure management needs attention — focus on one thing: staying forward "
+                    "Pressure management needs attention. Focus on one thing: staying forward "
                     "and tipping your edges earlier in each turn. Those two habits reinforce "
                     "each other."
                 )
@@ -731,7 +742,7 @@ class TurnInsights:
                 )
             else:
                 text = (
-                    "Excellent pressure management overall — you are loading and releasing the "
+                    "Excellent pressure management overall: you are loading and releasing the "
                     "ski efficiently through the turn."
                 )
             vals = [f"pressure: {pm:.2f}"]
@@ -743,7 +754,7 @@ class TurnInsights:
         if tr is not None:
             if tr < 0.4:
                 text = (
-                    "Your turn spacing is uneven — some turns feel rushed and others linger. "
+                    "Your turn spacing is uneven: some turns feel rushed and others linger. "
                     "Count a steady beat in your head from apex to apex and let your skis "
                     "change direction on that rhythm."
                 )
@@ -755,7 +766,7 @@ class TurnInsights:
                 )
             else:
                 text = (
-                    "Nice flow — your turns arrive on a predictable beat, which lets you spend "
+                    "Nice flow: your turns arrive on a predictable beat, which lets you spend "
                     "more attention on line and snow contact instead of chasing timing."
                 )
             vals = [f"rhythm: {tr:.2f}"]

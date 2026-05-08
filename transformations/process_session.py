@@ -239,7 +239,7 @@ def compute_turn_metrics(segment, peak_pos, sample_rate=20):
 
 
 def compute_pelvis_turn_metrics(segment, peak_pos, sample_rate=20):
-    """Pelvis-sensor wrapper — delegates to compute_turn_metrics."""
+    """Pelvis-sensor wrapper: delegates to compute_turn_metrics."""
     return compute_turn_metrics(segment, peak_pos, sample_rate)
 
 
@@ -313,8 +313,8 @@ def detect_turns(df, column="gyro_z", height=0.5, distance=20):
 
     Returns
     -------
-    peak_indices : ndarray  — row indices (into *df*) of detected peaks
-    segments : list[DataFrame]  — one per turn, sliced at midpoints
+    peak_indices : ndarray : row indices (into *df*) of detected peaks
+    segments : list[DataFrame] : one per turn, sliced at midpoints
     """
     signal = df[column].abs().values
     peak_indices, _ = find_peaks(signal, height=height, distance=distance)
@@ -541,7 +541,7 @@ def plot_session(df, output_path, run_results=None):
         axes[1].legend(loc="upper right")
     _shade_activity(axes[1], df)
     axes[1].set_ylabel("Gyro Z (rad/s)")
-    axes[1].set_title("Turn Detection — Gyroscope Z-Axis (skiing runs only)")
+    axes[1].set_title("Turn Detection: Gyroscope Z-Axis (skiing runs only)")
     axes[1].grid(True, alpha=0.3)
 
     # Panel 3: Speed (optional for IMU-only mobile sessions)

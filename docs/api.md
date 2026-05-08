@@ -166,8 +166,8 @@ session directory. Resolves linked skier and ski profiles from YAML.
 
 ```json
 {
-  "session": { "skier": "maggie", "ski": "sheeva10_104_158", "resort": "Aspen Highlands" },
-  "skier": { "name": "Maggie", "level": "advanced" },
+  "session": { "skier": "skier_01", "ski": "sheeva10_104_158", "resort": "Aspen Highlands" },
+  "skier": { "name": "Skier 01", "level": "advanced" },
   "ski": { "model": "Sheeva 10", "length_cm": 158 }
 }
 ```

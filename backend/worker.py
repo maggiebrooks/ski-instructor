@@ -68,6 +68,7 @@ def run_pipeline(session_id: str) -> dict:
             _generate_actionable_top_insight,
         )
         from ski.analysis.turn_signature import plot_session_signature
+        from ski.analysis.diagnostics import compute_pressure_ratio_diagnostics
 
         # --- 0. Idempotency / cache: if a report already exists for this version, return it ---
         report_path = get_path(session_id, "processed", "report.json")
@@ -88,7 +89,7 @@ def run_pipeline(session_id: str) -> dict:
         session_dir = RAW_DIR / session_id
         if not session_dir.is_dir():
             # Upload and worker must share the same filesystem. Redis is global;
-            # disk is not — if Railway (or any host) runs >1 replica, the HTTP
+            # disk is not: if Railway (or any host) runs >1 replica, the HTTP
             # upload hits instance A's disk while the RQ worker on instance B
             # looks here and finds nothing.
             err = (
@@ -175,6 +176,13 @@ def run_pipeline(session_id: str) -> dict:
 
         scores = TurnInsights.compute_movement_scores(filtered_df)
 
+        _pr_diag = compute_pressure_ratio_diagnostics(filtered_df)
+        logger.info(
+            "Pressure ratio diagnostics for %s: %s",
+            session_id,
+            _pr_diag,
+        )
+
         # Narrative insights and numeric scores both use filtered_df (confidence >= CONFIDENCE_THRESHOLD).
         report_lines = insights_engine.session_report(
             analyzer, session_id, turns_df=filtered_df
@@ -189,10 +197,24 @@ def run_pipeline(session_id: str) -> dict:
 
         metric_confidence = compute_confidence(df_processed, metadata)
 
+        # Detect the segment_runs missing-relativeAltitude fallback
+        # (transformations/process_session.py L266-273): when the upload
+        # has no barometer column the function defaults to a single
+        # skiing run and never adds `relativeAltitude` to the frame, so
+        # the processed CSV is missing the column (or it is all-null).
+        # Surfacing this through data_quality_flags lets the UI explain
+        # that chairlift / run segmentation was skipped.
+        missing_barometer = (
+            df_processed.empty
+            or "relativeAltitude" not in df_processed.columns
+            or df_processed["relativeAltitude"].isnull().all()
+        )
+
         data_quality_flags = compute_data_quality_flags(
             data_quality,
             turn_count=summary.get("total_turns"),
             session_duration_s=summary.get("session_duration_s"),
+            missing_barometer=missing_barometer,
         )
 
         logger.info("Data quality for %s: %s", session_id, data_quality)
@@ -265,6 +287,30 @@ def run_pipeline(session_id: str) -> dict:
         }
         report.setdefault("warnings", []).extend(warnings)
 
+        # Per-turn display rounding (audit Q5): feature modules at
+        # features/modules/{pelvis_turn_module,carving_phase_module}.py return
+        # raw float64 for numerical auditability. The DB layer in
+        # ski/processing/session_processor.py persists raw floats. We round
+        # only here, at the API serialization boundary, so the JSON sent to
+        # the frontend keeps the prior decimal places. Map: field -> ndigits.
+        _PER_TURN_DISPLAY_ROUNDING = {
+            "time_s": 1,                            # audit Q5: was rounded inside PelvisTurnModule
+            "duration_s": 2,                        # audit Q5: was rounded inside PelvisTurnModule
+            "speed_at_apex_kmh": 1,                 # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_turn_angle_deg": 1,             # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_peak_rotation_rate": 3,         # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_turn_radius_m": 1,              # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_max_roll_angle_deg": 1,         # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_peak_g_force": 2,               # audit Q5: was rounded inside PelvisTurnModule
+            "pelvis_symmetry": 2,                   # audit Q5: was rounded inside PelvisTurnModule
+            "initiation_start_time": 2,             # audit Q5: was rounded inside CarvingPhaseModule
+            "apex_time": 2,                         # audit Q5: was rounded inside CarvingPhaseModule
+            "finish_end_time": 2,                   # audit Q5: was rounded inside CarvingPhaseModule
+            "pelvis_edge_build_progressiveness": 1, # audit Q5: was rounded inside compute_carving_metrics
+            "pelvis_radius_stability_cov": 2,       # audit Q5: was rounded inside compute_carving_metrics
+            "speed_loss_ratio": 3,                  # audit Q5: was rounded inside compute_carving_metrics
+        }
+
         # Per-run turn arcs for web TurnArcViz (same shape as summary["runs"], plus per-turn confidence).
         runs_src = summary.get("runs") or []
         enriched_runs: list[dict] = []
@@ -281,6 +327,10 @@ def run_pipeline(session_id: str) -> dict:
                 td["confidence"] = round(
                     float(compute_per_turn_confidence(shim, data_quality)), 4
                 )
+                for _field, _ndigits in _PER_TURN_DISPLAY_ROUNDING.items():
+                    _val = td.get(_field)
+                    if _val is not None:
+                        td[_field] = round(float(_val), _ndigits)
                 new_turns.append(td)
             rd["per_turn"] = new_turns
             enriched_runs.append(rd)

@@ -72,7 +72,7 @@ def compute_carving_metrics(segment, init_pos, apex_pos, finish_pos):
             if dt > 0:
                 slope = np.polyfit(phase_secs - phase_secs[0],
                                    phase_roll, 1)[0]
-                edge_build = round(float(abs(np.degrees(slope))), 1)
+                edge_build = float(abs(np.degrees(slope)))
 
     radius_cov = None
     phase_gz = np.abs(gz[init_pos:finish_pos + 1])
@@ -82,13 +82,13 @@ def compute_carving_metrics(segment, init_pos, apex_pos, finish_pos):
         radii = np.clip(phase_speed[valid] / phase_gz[valid], 0, 200)
         mean_r = float(np.mean(radii))
         if mean_r > 0:
-            radius_cov = round(float(np.std(radii) / mean_r), 2)
+            radius_cov = float(np.std(radii) / mean_r)
 
     speed_loss = None
     sp_init = float(speed[init_pos])
     sp_finish = float(speed[finish_pos])
     if sp_init > 1.0 and sp_finish >= 0:
-        speed_loss = round(float((sp_init - sp_finish) / sp_init), 3)
+        speed_loss = float((sp_init - sp_finish) / sp_init)
 
     return {
         "edge_build_progressiveness": edge_build,
@@ -117,9 +117,9 @@ class CarvingPhaseModule(FeatureModule):
             turn_df, init_pos, peak_pos, finish_pos)
 
         return {
-            "initiation_start_time": round(float(secs[init_pos]), 2),
-            "apex_time": round(float(secs[peak_pos]), 2),
-            "finish_end_time": round(float(secs[finish_pos]), 2),
+            "initiation_start_time": float(secs[init_pos]),
+            "apex_time": float(secs[peak_pos]),
+            "finish_end_time": float(secs[finish_pos]),
             "pelvis_edge_build_progressiveness":
                 carving["edge_build_progressiveness"],
             "pelvis_radius_stability_cov":

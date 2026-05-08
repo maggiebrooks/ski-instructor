@@ -7,9 +7,10 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from backend.auth import require_api_key
 from backend.config import PERSISTENT_DIR, PLOTS_DIR, PROCESSED_DIR, RAW_DIR
 from backend.models import DB_PATH, delete_session_records, get_job
 
@@ -48,7 +49,7 @@ def _session_exists(session_id: str) -> bool:
 
 
 @router.delete("/session/{session_id}")
-def delete_session(session_id: str):
+def delete_session(session_id: str, _: None = Depends(require_api_key)):
     """Remove session artifacts, plots, raw upload, and DB rows."""
     if _session_id_invalid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session id")
@@ -66,7 +67,7 @@ def delete_session(session_id: str):
 
 
 @router.get("/session/{session_id}")
-def get_session(session_id: str):
+def get_session(session_id: str, _: None = Depends(require_api_key)):
     """Return processing status and report (if complete) for a session."""
     job = get_job(session_id)
     report_path = PROCESSED_DIR / session_id / "report.json"
@@ -99,7 +100,7 @@ def get_session(session_id: str):
 
 
 @router.get("/sessions")
-def list_sessions():
+def list_sessions(_: None = Depends(require_api_key)):
     """Return a summary list of all completed sessions."""
     sessions = []
     if not PROCESSED_DIR.exists():
@@ -140,7 +141,7 @@ def list_sessions():
 
 
 @router.get("/debug/paths")
-def debug_paths():
+def debug_paths(_: None = Depends(require_api_key)):
     """Temporary debug: show resolved storage paths and what's on disk."""
     import os
     result = {
@@ -168,7 +169,7 @@ def debug_paths():
 
 
 @router.get("/session/{session_id}/plot/{plot_name}")
-def get_plot(session_id: str, plot_name: str):
+def get_plot(session_id: str, plot_name: str, _: None = Depends(require_api_key)):
     """Serve a plot image for a session."""
     if ".." in plot_name or "/" in plot_name or "\\" in plot_name:
         raise HTTPException(status_code=400, detail="Invalid plot name")

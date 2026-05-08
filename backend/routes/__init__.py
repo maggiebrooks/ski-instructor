@@ -1,4 +1,4 @@
-"""HTTP route modules — import and attach routers in ``backend.app``."""
+"""HTTP route modules: import and attach routers in ``backend.app``."""
 
 from . import metadata, sessions, upload
 

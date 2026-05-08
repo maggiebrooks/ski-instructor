@@ -14,7 +14,7 @@
  */
 
 // DEV_URL: update this when your local IP changes (development only)
-// PROD_URL: stable Render URL — never changes
+// PROD_URL: stable Render URL (does not change).
 const PROD_URL = 'https://ski-ai-web.onrender.com';
 const DEV_URL = 'http://10.0.0.68:8000';
 

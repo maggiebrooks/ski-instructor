@@ -3,8 +3,9 @@
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from backend.auth import require_api_key
 from backend.config import DATA_DIR, RAW_DIR
 from ski.metadata.metadata_loader import MetadataLoader
 
@@ -16,7 +17,7 @@ _DATA_DIR = DATA_DIR.resolve()
 
 
 @router.get("/session/{session_id}/metadata")
-def get_metadata(session_id: str):
+def get_metadata(session_id: str, _: None = Depends(require_api_key)):
     """Return metadata for a session, including resolved skier/ski profiles."""
     loader = MetadataLoader()
 

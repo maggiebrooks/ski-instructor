@@ -20,19 +20,19 @@ export type LocationSample = {
   time: number;
   latitude: number;
   longitude: number;
-  /** Metres above WGS84 ellipsoid (iOS) — `0` if unavailable. */
+  /** Metres above WGS84 ellipsoid (iOS). `0` if unavailable. */
   altitude: number;
-  /** m/s — `0` if unavailable. */
+  /** m/s; `0` if unavailable. */
   speed: number;
-  /** Degrees, 0–360, true heading — `0` if unavailable. */
+  /** Degrees, 0–360, true heading; `0` if unavailable. */
   bearing: number;
-  /** Metres — `0` if unavailable. */
+  /** Metres; `0` if unavailable. */
   horizontalAccuracy: number;
-  /** Metres — `0` if unavailable. */
+  /** Metres; `0` if unavailable. */
   verticalAccuracy: number;
-  /** m/s — `0` if unavailable. */
+  /** m/s; `0` if unavailable. */
   speedAccuracy: number;
-  /** Degrees — `0` if unavailable. */
+  /** Degrees; `0` if unavailable. */
   bearingAccuracy: number;
 };
 
@@ -76,7 +76,7 @@ export function samplesToCsv(samples: Sample[], sessionStartNs: number): string 
 /**
  * Render a GPS buffer to a SensorLogger-compatible CSV.
  *
- * Header (column order matters — the FastAPI / pandas pipeline reads by name,
+ * Header (column order matters: the FastAPI / pandas pipeline reads by name,
  * but we keep SensorLogger's layout exactly so any future positional readers
  * also work):
  *
@@ -224,7 +224,7 @@ export type SessionBuffers = {
   gyro: Sample[];
   location: LocationSample[];
   barometer: BaroSample[];
-  /** Nanoseconds since Unix epoch — captured when the user taps Start. */
+  /** Nanoseconds since Unix epoch; captured when the user taps Start. */
   sessionStartNs: number;
   sessionQuality: SessionQualityFile;
 };

@@ -23,7 +23,7 @@ redis_listening() {
 }
 
 if redis_listening; then
-  echo "Redis already on 127.0.0.1:6379 — starting api, worker, web only."
+  echo "Redis already on 127.0.0.1:6379: starting api, worker, web only."
   exec "$HONCHO" start
 else
   echo "Starting Redis + api + worker + web (Procfile.with-redis)."

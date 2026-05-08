@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import BigButton from '../components/BigButton';
-import { getSession, type SessionReport, type SessionStatusResponse } from '../lib/api';
+import { deleteSession, getSession, type SessionReport, type SessionStatusResponse } from '../lib/api';
 import { sessionQualityTier, type SessionQualityFile } from '../lib/csv';
 import type { Go } from '../navigation';
 import { colors, radii, spacing, typography } from '../theme';
@@ -16,6 +16,9 @@ export default function ResultsScreen({ go, sessionId }: Props) {
   const [data, setData] = useState<SessionStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pollFailures, setPollFailures] = useState(0);
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -81,6 +84,24 @@ export default function ResultsScreen({ go, sessionId }: Props) {
     (typeof filteredTurnCount === 'number' && filteredTurnCount < 5);
   const showLimitedDataNote =
     scoreConfidence === 'medium' && !showLowDataCallout;
+
+  const handleDelete = async () => {
+    if (!deleteConfirming) {
+      setDeleteConfirming(true);
+      return;
+    }
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      await deleteSession(sessionId);
+      go({ name: 'home' });
+    } catch (err) {
+      setDeleteError('Delete failed. Please try again.');
+      setDeleteConfirming(false);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   if (error) {
     return (
@@ -213,6 +234,34 @@ export default function ResultsScreen({ go, sessionId }: Props) {
 
       <View style={{ height: spacing.lg }} />
       <BigButton label="Done" variant="secondary" onPress={() => go({ name: 'home' })} />
+
+      {deleteError && (
+        <Text style={{ color: '#ff4444', textAlign: 'center', marginBottom: 8 }}>
+          {deleteError}
+        </Text>
+      )}
+      <TouchableOpacity
+        onPress={handleDelete}
+        disabled={deleteLoading}
+        style={{
+          marginTop: 16,
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: '#ff4444',
+          alignItems: 'center',
+          opacity: deleteLoading ? 0.5 : 1,
+        }}
+      >
+        <Text style={{ color: '#ff4444', fontSize: 14 }}>
+          {deleteLoading
+            ? 'Deleting…'
+            : deleteConfirming
+            ? 'Tap again to confirm delete'
+            : 'Delete this session'}
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

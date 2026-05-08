@@ -7,7 +7,7 @@ Usage::
 
     from ski.metadata.metadata_loader import MetadataLoader
     loader = MetadataLoader()
-    skier  = loader.load_skier_profile("maggie")
+    skier  = loader.load_skier_profile("skier_01")
     ski    = loader.load_ski_profile("sheeva10_104_158")
     meta   = loader.load_session_metadata(Path("data/Aspen_Highlands-..."))
 """

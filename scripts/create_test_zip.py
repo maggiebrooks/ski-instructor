@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create scripts/test_session.zip — minimal Sensor Logger–style IMU ZIP for upload tests.
+"""Create scripts/test_session.zip: minimal Sensor Logger-style IMU ZIP for upload tests.
 
 200 rows per IMU @ 100 Hz (10 ms spacing), monotonic ``time`` in ns, columns
 ``time,seconds_elapsed,x,y,z``. Values sized to pass ``backend/validation/input_validator.py``.
@@ -45,7 +45,7 @@ def _gyro_rows() -> list[list]:
     for i in range(ROWS):
         t = BASE_TIME_NS + i * DT_NS
         sec = i * 0.01
-        # rad/s — turn-rate–ish band 0.1–0.5 with smooth variation.
+        # rad/s; turn-rate-ish band 0.1-0.5 with smooth variation.
         x = 0.06 * math.sin(i * 0.18)
         y = 0.04 * math.cos(i * 0.14)
         z = 0.32 + 0.14 * math.sin(i * 0.09)

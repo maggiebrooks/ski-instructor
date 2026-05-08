@@ -19,9 +19,9 @@ backseat / banking / skidding) targets the rows tagged
 
 Companion documents:
 
-- [research/literature-synthesis.md](research/literature-synthesis.md) —
+- [research/literature-synthesis.md](research/literature-synthesis.md)  - 
   the academic basis for every "source" cell.
-- [research/algorithm-implications.md](research/algorithm-implications.md) —
+- [research/algorithm-implications.md](research/algorithm-implications.md)  - 
   the engineering rationale for every "decision" cell.
 
 ---
@@ -73,7 +73,7 @@ Each of these will be revisited once Section 1.2 lands.
 | Name | Current value | File | Line(s) | Source / justification | Planned change |
 |------|--------------:|------|--------:|------------------------|----------------|
 | Butterworth low-pass cutoff `cutoff` | 5 Hz | `transformations/process_session.py` | 159 | Elfmark 2021 explicitly uses 4th-order zero-phase Butterworth at fc = 5 Hz on position before differentiation | none (fc) |
-| Butterworth filter order `order` | 4 | `transformations/process_session.py` | 159 | Elfmark 2021 — 4th-order zero-phase Butterworth at fc = 5 Hz before differentiation | none (shipped) |
+| Butterworth filter order `order` | 4 | `transformations/process_session.py` | 159 | Elfmark 2021: 4th-order zero-phase Butterworth at fc = 5 Hz before differentiation | none (shipped) |
 | Down-sample target rate `target_hz` | 20 Hz | `transformations/process_session.py` | 159 | Madgwick 2010 reports < 2° static and < 7° dynamic error even at 10 Hz update rate; 20 Hz is comfortably safe | none |
 | Source IMU rate `source_hz` | 100 Hz | `transformations/process_session.py` | 159 | Sensor Logger native rate | none |
 | `segment_runs.window_s` | 30 s | `transformations/process_session.py` | 221 | empirical (large enough to smooth barometric noise, small enough to catch chairlift transitions) | none until labelled-run study |
@@ -84,6 +84,7 @@ Each of these will be revisited once Section 1.2 lands.
 | `detect_turns.distance` | 20 samples (1 s @ 20 Hz) | `transformations/process_session.py` | 288 | empirical (rules out double-counting of one turn) | none |
 | Min turns for movement scores `MIN_TURNS_FOR_SCORES` | 5 | `ski/analysis/turn_insights.py` | 35 | empirical; below this, CV / median estimates are too noisy | revisit if jack-knife noise study suggests a higher floor |
 | Centripetal radius safe-floor `safe_radius` | 0.5 m | `ski/analysis/turn_insights.py` | 288 | empirical (avoids divide-by-zero and degenerate apex turns) | none |
+| `EDGE_PROGRESSIVENESS_SCALE` | 45.0 | `ski/analysis/turn_insights.py` | 42 | empirical (rescales median edge-build slope from deg/s before clipping to [0, 1]; Section 2) | recalibrate from beta session distribution |
 | Carving phase signal floor (gyro / speed) | gyro > 0.1 rad/s, speed > 1.0 m/s | `features/modules/carving_phase_module.py` | 80 | empirical | none |
 
 ---
@@ -98,21 +99,14 @@ session runs next winter.
 
 | Zone | Range | Source | Validation status |
 |------|-------|--------|--------------------|
-| Skidded | < 0.6 | docstring guidance, [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) line 254 | proxy — **invented cutoff**; replace with physics-derived bound (see below) |
-| Efficient carving | 0.8 – 1.2 | docstring guidance, same line | proxy — **invented band**; should become a tolerance around unity |
-| Aggressive / overloaded | > 1.2 | docstring guidance, same line | proxy — **invented cutoff**; justify vs. noise + `accel_mag` ≠ lateral |
+| Skidded | < 0.6 | docstring guidance, [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) | proxy; see derivation note below |
+| Efficient carving | 0.8 – 1.2 | docstring guidance, same | proxy; see derivation note below |
+| Aggressive / overloaded | > 1.2 | docstring guidance, same | proxy; see derivation note below |
+
+**Derivation note (desk physics pass).** Physics anchor: for a consistent carved arc, pressure_ratio → 1.0 is the natural centre (a_c = v²/r; in units of g, g_expected = v²/(r·g₀) where g₀=9.81 m/s²). Tolerance bands will be set after the desk pass produces a noise floor estimate from logged session diagnostics. Current zones (0.6 / 0.8–1.2 / 1.2) remain proxy until that pass is complete.
 
 `pressure_ratio = median(measured_g / (v² / r · g))` over a session.
-Defined at [ski/analysis/turn_insights.py L283-L296](../ski/analysis/turn_insights.py).
-
-**Physics anchor (before next winter, desk work).** Centripetal
-acceleration is \(a_c = v^2/r\); in units of \(g\),
-\(g_{\text{expected}} = v^2/(r g_0)\) with \(g_0 = 9.81\) m/s² — the
-same formula as `expected_g` in code. For a carved arc with consistent
-\(v\) and \(r\), an ideal **lateral** specific force at the apex matches
-that value, so **pressure ratio → 1** is the natural centre (not 0.8
-or 1.2 as magic anchors). Example: \(v = 10\) m/s, \(r = 10\) m →
-\(a_c = 10\) m/s² → \(g_{\text{expected}} \approx 1.02\,g\).
+Defined at [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) (``compute_normalized_metrics``, pressure-ratio block).
 
 **Skidding and the sign of `pressure_ratio` (not obvious).** One
 story: less lateral specific force than the kinematic \(v^2/r\)
@@ -125,7 +119,7 @@ If skidding makes that estimate **too small** vs. the radius that
 would match the actual lateral load, then `expected_g` is **too
 large** and the ratio is **suppressed**; if the estimate is **too
 large**, `expected_g` is **too small** and the ratio **inflates**
-— so **ratio > 1** is possible under skid-like mechanics even when
+ -  so **ratio > 1** is possible under skid-like mechanics even when
 the docstring labels **< 0.6 as "skidding"**. Until the desk pass
 characterises \(r\) vs. load on labelled runs, treat **both**
 directions as physically plausible and do not treat the current zone
@@ -149,9 +143,9 @@ Defined at [ski/analysis/turn_insights.py L298-L308](../ski/analysis/turn_insigh
 |-------|-------|
 | Definition | Absolute slope of fused `roll` vs. time from **initiation** to **apex** (linear `polyfit` on that phase), reported as \(|d\,\mathrm{roll}/dt|\) in **deg/s** (see [features/modules/carving_phase_module.py](../features/modules/carving_phase_module.py) `compute_carving_metrics`, lines 66–75). |
 | Stored name | `pelvis_edge_build_progressiveness` on turns / DB (from [CarvingPhaseModule](../features/modules/carving_phase_module.py) `pelvis_edge_build_progressiveness` key). |
-| Used in | `edge_consistency` in [ski/analysis/turn_insights.py L413-L426](../ski/analysis/turn_insights.py) — median across turns is passed through `clip(..., 0, 1)`. Typical values are **tens of deg/s**, so this term **saturates at 1.0** for almost all real turns unless rescaled. |
+| Used in | `edge_consistency` in [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py): median across turns is divided by ``EDGE_PROGRESSIVENESS_SCALE`` (Section 2), then passed through `clip(..., 0, 1)`. |
 | Literature | None in the nine-paper corpus; Reid/Komissarov-style edge-angle concepts (cited in Tang 2024) are not this exact signal. |
-| Validation status | **proxy** — coaching intuition ("progressive edge build") without external validation or consistent scaling to [0, 1]. |
+| Validation status | **proxy**: coaching intuition ("progressive edge build") without external validation or consistent scaling to [0, 1]. |
 
 ### 3.4 Movement score clipping ranges
 
@@ -161,7 +155,7 @@ ingredient-level clipping appears in `compute_movement_scores`:
 | Score | Composition | Clipping locations |
 |-------|------------|--------------------|
 | `rotary_stability` | `1 − clip(torso_rotation_ratio, 0, 1)` | [ski/analysis/turn_insights.py L408-L411](../ski/analysis/turn_insights.py) |
-| `edge_consistency` | mean of `1 − clip(radius_cv)`, `clip(edge_progressiveness)`, `1 − clip(radius_stability)` | [ski/analysis/turn_insights.py L413-L426](../ski/analysis/turn_insights.py) |
+| `edge_consistency` | mean of `1 − clip(radius_cv)`, `clip(median(edge_prog) / EDGE_PROGRESSIVENESS_SCALE)`, `1 − clip(radius_stability)` | [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) ``compute_movement_scores`` |
 | `pressure_management` | `clip(pressure_ratio)` (or fallback `clip(g_force/1.2)`), combined with `1 − clip(speed_loss)` | [ski/analysis/turn_insights.py L428-L446](../ski/analysis/turn_insights.py) |
 | `turn_symmetry` | mean of `1 − clip(\|L−R\|/total)`, `clip(symmetry)`, `1 − clip(\|L_radius − R_radius\|/avg_radius)` | [ski/analysis/turn_insights.py L448-L467](../ski/analysis/turn_insights.py) |
 | `turn_shape_consistency` | mean of `1 − clip(radius_cv)`, `1 − clip(angle_cv)` | [ski/analysis/turn_insights.py L469-L478](../ski/analysis/turn_insights.py) |
@@ -195,6 +189,7 @@ copy, marketing material, or report header until validated.
 | "Sub-degree edge or attitude accuracy" | Single-phone fusion + tilted pocket frame cannot reach Madgwick's lab-validated < 0.6° static error. | Madgwick 2010 |
 | "GPS-tracked race line" | BFU 2025 measures consumer phone GNSS at ~4.5 m mean horizontal error. | BFU 2025 |
 | "Real-time on-snow feedback" | Pipeline is batch-processing. | Architecture |
+| "Run segmentation (chairlift detection)" | `relativeAltitude` column absent from upload; defaulted to one skiing run | `segment_runs` fallback, [transformations/process_session.py L266](../transformations/process_session.py); surfaced as `MISSING_BAROMETER` in `data_quality_flags` ([backend/metrics/confidence.py](../backend/metrics/confidence.py)) |
 
 When the on-snow validation produces evidence sufficient to retire any
 of these non-claims, that row moves into Section 3 with a measured
@@ -221,7 +216,7 @@ event (see Section 6) and a measured noise band.
 
 | Event | When | Targets |
 |-------|------|---------|
-| **Desk physics pass** — \(g_{\text{expected}} = v^2/(r g_0)\) grid, unity anchor, tolerance bands, `accel_mag` vs. lateral caveat | Before next winter (rainy-afternoon scope) | Section 3.1: replace invented 0.6 / 0.8 / 1.2 with derived numbers + documented assumptions; see [research/algorithm-implications.md §6](research/algorithm-implications.md) |
+| **Desk physics pass**: \(g_{\text{expected}} = v^2/(r g_0)\) grid, unity anchor, tolerance bands, `accel_mag` vs. lateral caveat | Before next winter (rainy-afternoon scope) | Section 3.1: replace invented 0.6 / 0.8 / 1.2 with derived numbers + documented assumptions; see [research/algorithm-implications.md §6](research/algorithm-implications.md) |
 | Frame-alignment landing | Six-month window (before next winter) | Sections 1.2, 1.3; recalibrates 1.4 entries |
 | 4th-order Butterworth at fc = 5 Hz in `preprocess()` | **Done** (shipped with this parameter set) | Section 2 row `order` = 4; regression = `pytest tests/` |
 | Intentional-error on-snow session (10 runs: backseat, banking, skidding, plus baseline) | Next winter (Dec 2026 / Jan 2027) | **Tunes** Section 3.1–3.4 after the desk pass; separates error categories from baseline; cannot be the first time thresholds meet \(F=mv^2/r\) |

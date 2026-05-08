@@ -11,19 +11,19 @@ const SESSION_POLL_INTERVAL_MS = 2000
 
 const METRIC_COACHING: Record<string, string> = {
   turn_rhythm:
-    'Your turn timing is inconsistent — some turns are rushed, others too drawn out. Try counting a quiet rhythm as you ski: one for the initiation, two for the fall line, three for the finish. Consistency here will make everything else feel smoother.',
+    'Your turn timing is inconsistent: some turns are rushed, others too drawn out. Try counting a quiet rhythm as you ski: one for the initiation, two for the fall line, three for the finish. Consistency here will make everything else feel smoother.',
   pressure_management:
-    'Drive your shins into the boot tongues earlier through the fall line and keep your hands forward — that centers you over the outside ski when it matters most.',
+    'Drive your shins into the boot tongues earlier through the fall line and keep your hands forward so that you stay centered over the outside ski when it matters most.',
   edge_consistency:
-    'Build edge angle progressively from initiation to the fall line — let ankles and knees tip into the hill so each turn bites in the same place.',
+    'Build edge angle progressively from initiation to the fall line. Let ankles and knees tip into the hill so each turn bites in the same place.',
   rotary_stability:
-    'Quiet the upper body and let your legs steer — keep shoulders facing down the hill more of the turn so rotation does not replace clean edging.',
+    'Quiet the upper body and let your legs steer; keep shoulders facing down the hill more of the turn so rotation does not replace clean edging.',
   turn_symmetry:
-    'Spend a few runs mirroring your stronger side on the weaker one — match pressure, shape, and timing left and right.',
+    'Spend a few runs mirroring your stronger side on the weaker one and match pressure, shape, and timing left and right.',
   turn_shape_consistency:
-    'Aim for a more uniform turn size — mixing very short and very long arcs on the same run makes rhythm and line harder to trust.',
+    'Aim for a more uniform turn size. Mixing very short and very long arcs on the same run makes rhythm and line harder to trust.',
   turn_efficiency:
-    'Look for flow turn to turn — ease off unnecessary braking and let the ski run when the slope allows; smooth speed control reads as efficiency.',
+    'Look for flow turn to turn: ease off unnecessary braking and let the ski run when the slope allows; smooth speed control reads as efficiency.',
 }
 
 const SCORE_KEYS = [
@@ -229,10 +229,10 @@ function overallScoreFromReport(scores: Record<string, number | null>): number |
   return (vals.reduce((a, b) => a + b, 0) / vals.length) * 100
 }
 
-/** null, undefined, or non-finite → em dash; else N/100 for movement scores. */
+/** null, undefined, or non-finite → hyphen; else N/100 for movement scores. */
 function formatMovementScoreOutOf100(raw: number | null | undefined): string {
-  if (raw === null || raw === undefined) return '—'
-  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '—'
+  if (raw === null || raw === undefined) return '-'
+  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '-'
   return `${Math.round(raw * 100)}/100`
 }
 
@@ -242,10 +242,10 @@ function movementScoreFraction01(raw: number | null | undefined): number | null 
   return raw
 }
 
-/** null, undefined, or non-finite → em dash; else rounded percent 0–100 (no /100 suffix). */
+/** null, undefined, or non-finite → hyphen; else rounded percent 0–100 (no /100 suffix). */
 function formatCoachScorePill01(raw: number | null | undefined): string {
-  if (raw === null || raw === undefined) return '—'
-  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '—'
+  if (raw === null || raw === undefined) return '-'
+  if (typeof raw !== 'number' || Number.isNaN(raw) || !Number.isFinite(raw)) return '-'
   return String(Math.round(raw * 100))
 }
 
@@ -606,7 +606,7 @@ export default function Session() {
         <div className="error-card">
           <h1>Session not found</h1>
           <p>
-            This is an early preview — session data isn&apos;t persisted between server restarts.
+            This is an early preview: session data isn&apos;t persisted between server restarts.
             Upload a new session or try the sample on the home page.
           </p>
           <Link to="/" className="btn btn-primary">
@@ -623,7 +623,7 @@ export default function Session() {
         <div className="error-card">
           <h1>Session not found</h1>
           <p>
-            This is an early preview — session data isn&apos;t persisted between server restarts.
+            This is an early preview: session data isn&apos;t persisted between server restarts.
             Upload a new session or try the sample on the home page.
           </p>
           <Link to="/" className="btn btn-primary">

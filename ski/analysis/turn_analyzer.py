@@ -43,7 +43,7 @@ class TurnAnalyzer:
         self.db_path = db_path
 
     # ------------------------------------------------------------------
-    # Core loader — all SQL lives here
+    # Core loader: all SQL lives here
     # ------------------------------------------------------------------
 
     def load_turns(self, session_ids: list[str] | None = None) -> pd.DataFrame:

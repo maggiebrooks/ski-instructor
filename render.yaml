@@ -1,10 +1,10 @@
 # Render deployment configuration
 # Database: SQLite under default app storage (ephemeral unless you add a disk
 # or external DB later).
-# Redis: Render free tier (25MB, no persistence — queue only)
+# Redis: Render free tier (25MB, no persistence: queue only)
 #
 # BEFORE WINTER 2026: upgrade ski-ai-redis to paid plan and provision
-# Render Postgres Starter ($7/mo) — free Postgres expires in 90 days.
+# Render Postgres Starter ($7/mo): free Postgres expires in 90 days.
 # See docs/MASTER_PLAN.md Section 8 open question 1.
 #
 # For durable raw/processed files and DB across deploys, attach a Render Disk

@@ -1,4 +1,4 @@
-<!-- Internal contributor doc — not required reading for portfolio viewers -->
+<!-- Internal contributor doc: not required reading for portfolio viewers -->
 # GitHub: private repo, safety, and first push
 
 This project can hold **uploaded sensor data** and **session IDs**. Treat the remote as **private** unless you intentionally open-source a scrubbed snapshot.
@@ -7,10 +7,10 @@ This project can hold **uploaded sensor data** and **session IDs**. Treat the re
 
 Already ignored via [`.gitignore`](../.gitignore):
 
-- `sessions/raw/`, `sessions/processed/`, `sessions/plots/` — uploads and reports  
-- `data/ski.db` and `*.db` — SQLite with turns/sessions  
-- `.env`, `.env.local`, `.env.*` — Redis URLs, API keys, Render secrets  
-- `logs/` — may leak paths and errors  
+- `sessions/raw/`, `sessions/processed/`, `sessions/plots/`: uploads and reports  
+- `data/ski.db` and `*.db`: SQLite with turns/sessions  
+- `.env`, `.env.local`, `.env.*`: Redis URLs, API keys, Render secrets  
+- `logs/`: may leak paths and errors  
 - `venv/`, `frontend/node_modules/`  
 
 **Before every commit**, skim `git status` and `git diff --staged` so no ZIP/CSV/JSON from a real day lands in the repo.
@@ -64,8 +64,8 @@ git push -u origin main
 | Setting | Suggestion |
 |--------|------------|
 | **Repo visibility** | **Private** until you explicitly want public. |
-| **Collaborators** | **Settings → Collaborators** — invite only who needs access; use **Read** vs **Write** deliberately. |
-| **Branch protection** (optional) | **Settings → Rules → Rulesets** — require PR reviews on `main` for teams. |
+| **Collaborators** | **Settings → Collaborators**: invite only who needs access; use **Read** vs **Write** deliberately. |
+| **Branch protection** (optional) | **Settings → Rules → Rulesets**: require PR reviews on `main` for teams. |
 | **Dependabot / Code scanning** | Enable under **Security** for supply-chain and secret scanning (helps catch leaked keys). |
 
 Do **not** store production secrets in the repo. For Render or CI, use **GitHub Actions secrets** or the host’s **environment variables** only.

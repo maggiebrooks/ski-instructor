@@ -159,7 +159,7 @@ export default function Upload() {
         <h1 className="upload-light-headline">Analyze Your Run</h1>
         <p className="upload-light-sub">
           Ski Recorder uses your iPhone&apos;s motion sensors to measure your technique across seven
-          movement dimensions used by PSIA-certified instructors — rotary stability, edge
+          movement dimensions used by PSIA-certified instructors: rotary stability, edge
           consistency, pressure management, turn symmetry, turn shape, turn rhythm, and turn
           efficiency.
         </p>
@@ -251,7 +251,7 @@ export default function Upload() {
           <p className="upload-footer-line">
             Don&apos;t have the iOS app yet? Download a sample session below to try the analyzer.
           </p>
-          {/* Sample ZIP must be placed at frontend/public/sample-session.zip —
+          {/* Sample ZIP must be placed at frontend/public/sample-session.zip.
               Vite serves public/ at root. File is gitignored if large;
               add to .gitignore if needed. */}
           <a
@@ -299,7 +299,12 @@ export default function Upload() {
             <p className="upload-modal-stack">
               React 19 + Vite · FastAPI · RQ/Redis · SQLite → PostgreSQL · Expo React Native
             </p>
-            <a href="#" className="upload-modal-github">
+            <a
+              href="https://github.com/maggiebrooks/ski-instructor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="upload-modal-github"
+            >
               View source on GitHub →
             </a>
             <button type="button" className="upload-modal-close-btn" onClick={() => setAboutOpen(false)}>

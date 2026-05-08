@@ -3,6 +3,8 @@ import axios, { AxiosError } from 'axios';
 import { API_BASE_URL } from '../config';
 import type { SessionQualityFile } from './csv';
 
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
+
 export type UploadResponse = {
   session_id: string;
   status?: string;
@@ -59,7 +61,7 @@ export async function uploadSessionZip(
   const url = `${API_BASE_URL.replace(/\/$/, '')}/api/upload-session`;
 
   const res = await axios.post<UploadResponse>(url, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: { 'Content-Type': 'multipart/form-data', 'X-API-Key': API_KEY },
     timeout: 45 * 60 * 1000,
     onUploadProgress: (e) => {
       if (!onProgress) return;
@@ -73,8 +75,19 @@ export async function uploadSessionZip(
 /** Fetch a session's current status/report (poll while processing). */
 export async function getSession(sessionId: string): Promise<SessionStatusResponse> {
   const url = `${API_BASE_URL.replace(/\/$/, '')}/api/session/${encodeURIComponent(sessionId)}`;
-  const res = await axios.get<SessionStatusResponse>(url, { timeout: 180_000 });
+  const res = await axios.get<SessionStatusResponse>(url, {
+    headers: { 'X-API-Key': API_KEY },
+    timeout: 180_000,
+  });
   return res.data;
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const url = `${API_BASE_URL.replace(/\/$/, '')}/api/session/${sessionId}`;
+  await axios.delete(url, {
+    headers: { 'X-API-Key': API_KEY },
+    timeout: 15_000,
+  });
 }
 
 export function describeUploadError(err: unknown): string {

@@ -23,8 +23,8 @@ def profiles_dir(tmp_path):
     skis = tmp_path / "skis"
     skis.mkdir()
 
-    (skiers / "maggie.yaml").write_text(yaml.dump({
-        "skier_id": "maggie",
+    (skiers / "skier_01.yaml").write_text(yaml.dump({
+        "skier_id": "skier_01",
         "height_cm": 157,
         "weight_kg": 63,
         "ability_level": "advanced",
@@ -49,7 +49,7 @@ def session_dir(tmp_path):
     """Create a temporary session directory with a metadata.yaml."""
     meta = {
         "session_id": "test_session_001",
-        "skier": "maggie",
+        "skier": "skier_01",
         "ski": "sheeva10_104_158",
         "location": "breckenridge",
         "terrain": "groomer",
@@ -68,15 +68,15 @@ def session_dir(tmp_path):
 class TestLoadSkierProfile:
     def test_loads_correctly(self, profiles_dir):
         loader = MetadataLoader(profiles_dir=profiles_dir)
-        profile = loader.load_skier_profile("maggie")
+        profile = loader.load_skier_profile("skier_01")
         assert profile is not None
-        assert profile["skier_id"] == "maggie"
+        assert profile["skier_id"] == "skier_01"
         assert profile["height_cm"] == 157
         assert profile["ability_level"] == "advanced"
 
     def test_equipment_nested(self, profiles_dir):
         loader = MetadataLoader(profiles_dir=profiles_dir)
-        profile = loader.load_skier_profile("maggie")
+        profile = loader.load_skier_profile("skier_01")
         assert profile["equipment"]["boots"] == "Lange RX 95"
 
     def test_missing_returns_none(self, profiles_dir):
@@ -112,7 +112,7 @@ class TestLoadSessionMetadata:
         meta = loader.load_session_metadata(session_dir)
         assert meta is not None
         assert meta["session_id"] == "test_session_001"
-        assert meta["skier"] == "maggie"
+        assert meta["skier"] == "skier_01"
         assert meta["ski"] == "sheeva10_104_158"
         assert meta["location"] == "breckenridge"
 
@@ -128,9 +128,9 @@ class TestLoadSessionMetadata:
 class TestRealProfiles:
     def test_real_skier_profile(self):
         loader = MetadataLoader()
-        profile = loader.load_skier_profile("maggie")
+        profile = loader.load_skier_profile("skier_01")
         assert profile is not None
-        assert profile["skier_id"] == "maggie"
+        assert profile["skier_id"] == "skier_01"
 
     def test_real_ski_profile(self):
         loader = MetadataLoader()
@@ -155,4 +155,4 @@ class TestRealProfiles:
         loader = MetadataLoader()
         meta = loader.load_session_metadata(session_path)
         assert meta is not None
-        assert meta["skier"] == "maggie"
+        assert meta["skier"] == "skier_01"

@@ -1,5 +1,5 @@
 # Use when Redis is NOT already running: honcho -f Procfile.with-redis start
-# Worker waits for Redis — Honcho starts all processes at once, so rq would
+# Worker waits for Redis: Honcho starts all processes at once, so rq would
 # otherwise race redis-server before it binds to 6379.
 redis: redis-server
 api: uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000

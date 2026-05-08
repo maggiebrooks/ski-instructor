@@ -17,7 +17,7 @@ from backend.contracts.schemas import ValidationResult
 logger = logging.getLogger(__name__)
 
 REQUIRED_FILES = ["Accelerometer.csv", "Gyroscope.csv"]
-ACCEL_BOUND = 250.0  # m/s² (~25g) — allow spikes from bumps/impacts
+ACCEL_BOUND = 250.0  # m/s² (~25g): allow spikes from bumps/impacts
 GYRO_BOUND = 50.0    # rad/s
 MIN_ROWS = 10
 MIN_SAMPLE_INTERVAL_S = 0.001

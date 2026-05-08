@@ -8,11 +8,14 @@ import axios from 'axios'
 const baseURL =
   (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '').trim() || '/api'
 
+const API_KEY = import.meta.env.VITE_API_KEY ?? ''
+
 /** Generous read timeout for session list/detail (large reports, slow networks). */
 const SESSION_READ_TIMEOUT_MS = 180_000
 
 export const api = axios.create({
   baseURL,
+  headers: { 'X-API-Key': API_KEY },
 })
 
 /** Large uploads must hit the real API host; relative `/api` on Vercel is not Railway. */

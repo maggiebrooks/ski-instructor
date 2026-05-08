@@ -60,7 +60,7 @@ async def _api_lifespan(_: FastAPI):
 
 # --- API app (all REST routes live here; mounted at /api on the outer `app`) ---
 # Swagger UI: GET /api/docs   |   OpenAPI JSON: GET /api/openapi.json
-# The root `app` has no route handlers except mounts — do not use /docs on the root for API.
+# The root `app` has no route handlers except mounts: do not use /docs on the root for API.
 api = FastAPI(title="ski-ai", version="2.0.0", lifespan=_api_lifespan)
 api.add_middleware(
     CORSMiddleware,

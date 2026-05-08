@@ -41,7 +41,7 @@ def _make_turn_df(n=50, **overrides):
         "pelvis_estimated_turn_radius": rng.uniform(5, 20, n),
         "pelvis_peak_g_force": rng.uniform(0.2, 1.2, n),
         "pelvis_symmetry": rng.uniform(0.5, 1.0, n),
-        "pelvis_edge_build_progressiveness": rng.uniform(0.1, 0.8, n),
+        "pelvis_edge_build_progressiveness": rng.uniform(10.0, 55.0, n),
         "pelvis_radius_stability": rng.uniform(0.1, 0.6, n),
     }
     data.update(overrides)
@@ -220,7 +220,8 @@ class TestComputeMovementScores:
     def test_low_radius_cv_high_edge_consistency(self, insights):
         df = _make_turn_df(
             pelvis_estimated_turn_radius=np.full(50, 10.0),
-            pelvis_edge_build_progressiveness=np.full(50, 0.9),
+            # deg/s (matches carving_phase_module); ~SCALE yields ~1.0 after rescaling
+            pelvis_edge_build_progressiveness=np.full(50, 45.0),
             pelvis_radius_stability=np.full(50, 0.05),
         )
         scores = insights.compute_movement_scores(df)
@@ -365,8 +366,8 @@ class TestComputeMovementScores:
         assert scores["pressure_ratio"] is None
         assert scores["torso_rotation_ratio"] is None
         assert scores.get("top_insight") == (
-            "Focus on smooth, controlled skiing and consistent turns — "
-            "that foundation makes every fundamental easier to refine."
+            "Focus on smooth, controlled skiing and consistent turns. "
+            "That foundation makes every fundamental easier to refine."
         )
 
     def test_top_insight_targets_weakest_score(self, insights):
@@ -606,7 +607,7 @@ class TestCleanInsights:
             "  You have a decent platform but could load the outside ski earlier at turn initiation.",
             "  [pressure management: 0.52, avg speed loss: 0.0%]",
             "Edging Control",
-            "Strong edge control — you are holding a clean arc through the turn.",
+            "Strong edge control: you are holding a clean arc through the turn.",
             "[edge consistency: 0.88]",
         ]
         out = clean_insights(raw)

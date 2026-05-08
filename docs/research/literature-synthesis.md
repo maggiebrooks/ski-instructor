@@ -1,4 +1,4 @@
-# Literature Synthesis — Sensor-Based Alpine Ski Analytics
+# Literature Synthesis: Sensor-Based Alpine Ski Analytics
 
 *Last updated: April 2026. Source PDFs live in [research/](../../research/).*
 
@@ -21,21 +21,21 @@ units and uncertainty quoted wherever the original authors quoted them.
 
 ## Table of contents
 
-1. [Fasel 2013 — Lower-limb IMU validation](#1-fasel-2013--lower-limb-imu-validation)
-2. [Fasel 2016 — dGNSS + 7-IMU centre-of-mass kinematics](#2-fasel-2016--dgnss--7-imu-centre-of-mass-kinematics)
-3. [Gilgien 2016 — Ski geometry and kinetic energy in DH](#3-gilgien-2016--ski-geometry-and-kinetic-energy-in-dh)
-4. [Adelsberger 2014 — Ski bending characteristics in use](#4-adelsberger-2014--ski-bending-characteristics-in-use)
-5. [Elfmark 2021 — dGNSS + video pose for ski jumping](#5-elfmark-2021--dgnss--video-pose-for-ski-jumping)
-6. [BFU 2025 — Smartphone GNSS in skiing](#6-bfu-2025--smartphone-gnss-in-skiing)
-7. [Madgwick 2010 — Quaternion orientation filter](#7-madgwick-2010--quaternion-orientation-filter)
-8. [Magelssen 2024 — Reinforcement-learning vs. coach-led instruction](#8-magelssen-2024--reinforcement-learning-vs-coach-led-instruction)
-9. [Tang 2024 — SnowMotion 5-IMU consumer system](#9-tang-2024--snowmotion-5-imu-consumer-system)
+1. [Fasel 2013: Lower-limb IMU validation](#1-fasel-2013--lower-limb-imu-validation)
+2. [Fasel 2016: dGNSS + 7-IMU centre-of-mass kinematics](#2-fasel-2016--dgnss--7-imu-centre-of-mass-kinematics)
+3. [Gilgien 2016: Ski geometry and kinetic energy in DH](#3-gilgien-2016--ski-geometry-and-kinetic-energy-in-dh)
+4. [Adelsberger 2014: Ski bending characteristics in use](#4-adelsberger-2014--ski-bending-characteristics-in-use)
+5. [Elfmark 2021: dGNSS + video pose for ski jumping](#5-elfmark-2021--dgnss--video-pose-for-ski-jumping)
+6. [BFU 2025: Smartphone GNSS in skiing](#6-bfu-2025--smartphone-gnss-in-skiing)
+7. [Madgwick 2010: Quaternion orientation filter](#7-madgwick-2010--quaternion-orientation-filter)
+8. [Magelssen 2024: Reinforcement-learning vs. coach-led instruction](#8-magelssen-2024--reinforcement-learning-vs-coach-led-instruction)
+9. [Tang 2024: SnowMotion 5-IMU consumer system](#9-tang-2024--snowmotion-5-imu-consumer-system)
 10. [Cross-paper synthesis](#cross-paper-synthesis)
 11. [Open problems and where ski-ai sits](#open-problems-and-where-ski-ai-sits)
 
 ---
 
-## 1. Fasel 2013 — Lower-limb IMU validation
+## 1. Fasel 2013: Lower-limb IMU validation
 
 **Citation.** Fasel B., Spörri J., Chardonnens J., Gilgien M., Kröll J.,
 Müller E., Aminian K. (2013). *3D measurement of lower-limb kinematics
@@ -74,7 +74,7 @@ quantification of inter-day repeatability.
 
 ---
 
-## 2. Fasel 2016 — dGNSS + 7-IMU centre-of-mass kinematics
+## 2. Fasel 2016: dGNSS + 7-IMU centre-of-mass kinematics
 
 **Citation.** Fasel B., Spörri J., Gilgien M., Boffi G., Chardonnens J.,
 Müller E., Aminian K. (2016). *Three-Dimensional Body and Centre of
@@ -109,9 +109,9 @@ out as future work).
 | CoM position (simplified) | 0.12 m | 0.06 m |
 | CoM speed (full FK) | 0.04 m/s (0.24 %) | 0.14 m/s (0.83 %) |
 | CoM speed (simplified) | −0.01 m/s | 0.14 m/s |
-| Hip position | ~0.10 m | — |
-| Knee position | 0.14–0.16 m | — |
-| Ankle position | 0.15–0.17 m | — |
+| Hip position | ~0.10 m |: |
+| Knee position | 0.14–0.16 m |: |
+| Ankle position | 0.15–0.17 m |: |
 
 The authors quote literature thresholds for what counts as a *meaningful*
 difference: CoM speed differences of 0.5–1 m/s and CoM trajectory
@@ -130,7 +130,7 @@ optional consumer GNSS as future work.
 
 ---
 
-## 3. Gilgien 2016 — Ski geometry and kinetic energy in DH
+## 3. Gilgien 2016: Ski geometry and kinetic energy in DH
 
 **Citation.** Gilgien M., Spörri J., Kröll J., Müller E. (2016).
 *Effect of ski geometry and standing height on kinetic energy:
@@ -160,7 +160,7 @@ of time series to the gate sequence.
 Only the SKI_WLH prototype (narrower waist, lower stand height, longer)
 reduced E_KIN in steep terrain, by ~3 % overall and up to 7 % at
 specific gates. No effect on flat terrain. The authors translate ~3 %
-E_KIN into roughly 0.5 m shorter jump and 0.02 s shorter airtime — too
+E_KIN into roughly 0.5 m shorter jump and 0.02 s shorter airtime: too
 small to compromise reaction time at typical 20 m look-ahead distances
 (0.01–0.03 s gain).
 
@@ -174,7 +174,7 @@ studies.
 
 ---
 
-## 4. Adelsberger 2014 — Ski bending characteristics in use
+## 4. Adelsberger 2014: Ski bending characteristics in use
 
 **Citation.** Adelsberger R., Aufdenblatten S., Gilgien M., Tröster G.
 (2014). *On Bending Characteristics of Skis in Use.* Procedia
@@ -216,7 +216,7 @@ the definition is the gold standard against which any single-IMU
 
 ---
 
-## 5. Elfmark 2021 — dGNSS + video pose for ski jumping
+## 5. Elfmark 2021: dGNSS + video pose for ski jumping
 
 **Citation.** Elfmark O., Ettema G., Groos D., Ihlen E. A. F., Velta
 R., Haugen P., Braaten S., Gilgien M. (2021). *Performance Analysis
@@ -266,7 +266,7 @@ and zero-phase choices justify our planned filter upgrade.
 
 ---
 
-## 6. BFU 2025 — Smartphone GNSS in skiing
+## 6. BFU 2025: Smartphone GNSS in skiing
 
 **Citation.** Ellenberger L., Bürgi F., Gilgien M. (2025).
 *Smartphone Movement Data in Skiing.* BFU report 2.556.08, building on
@@ -313,7 +313,7 @@ phone-only setup.
 
 ---
 
-## 7. Madgwick 2010 — Quaternion orientation filter
+## 7. Madgwick 2010: Quaternion orientation filter
 
 **Citation.** Madgwick S. O. H. (April 2010). *An efficient orientation
 filter for inertial and inertial/magnetic sensor arrays.* University
@@ -370,7 +370,7 @@ and own the orientation pipeline ourselves.
 
 ---
 
-## 8. Magelssen 2024 — Reinforcement-learning vs. coach-led instruction
+## 8. Magelssen 2024: Reinforcement-learning vs. coach-led instruction
 
 **Citation.** Magelssen C., Gilgien M., Tajet S. L., Losnegard T.,
 Haugen P., Reid R., Frömer R. (2024 pre-print). *Reinforcement
@@ -413,7 +413,7 @@ instructions, alongside the existing prescriptive coaching strings.
 
 ---
 
-## 9. Tang 2024 — SnowMotion 5-IMU consumer system
+## 9. Tang 2024: SnowMotion 5-IMU consumer system
 
 **Citation.** Tang W., Suo X., Wang X., Shan B., Li L., Liu Y. (2024).
 *SnowMotion: A Wearable Sensor-Based Mobile Platform for Alpine Skiing
@@ -528,7 +528,7 @@ The literature offers two single-sensor proxies that can survive
 without ski strain measurement: (a) the centripetal-pressure ratio
 \(g_\text{measured} / (v^2 / r \cdot g)\), which approaches 1 for an
 ideally carved turn and falls below 1 for a skidded turn, and
-(b) edge-angle progressiveness — how monotonically the roll angle
+(b) edge-angle progressiveness: how monotonically the roll angle
 builds through the initiation phase. Neither is validated in the
 literature against the Adelsberger gold standard.
 
@@ -536,7 +536,7 @@ literature against the Adelsberger gold standard.
 
 Magelssen 2024 is the lone behavioural-science paper, and its message
 for instrumentation is paradoxical: the best coaching feedback for
-skilled athletes was the *least informative* — a single split time —
+skilled athletes was the *least informative*: a single split time  - 
 because it preserved the athlete's exploration. For an instrumented
 coaching product like ski-ai, this argues for two distinct UX modes:
 prescriptive corrective feedback for novices, and outcome-only metric

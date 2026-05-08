@@ -11,7 +11,7 @@ analytics gracefully degrade when it is absent.
 Store static attributes about the skier that rarely change between sessions:
 
 ```yaml
-skier_id: maggie
+skier_id: skier_01
 height_cm: 157
 weight_kg: 63
 ability_level: advanced
@@ -41,7 +41,7 @@ and ski profile by ID:
 
 ```yaml
 session_id: Aspen_Highlands-2026-02-26_16-52-11
-skier: maggie
+skier: skier_01
 ski: sheeva10_104_158
 location: aspen_highlands
 terrain: groomer

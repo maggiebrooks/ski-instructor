@@ -21,6 +21,10 @@ LOW_TURN_COUNT = "LOW_TURN_COUNT"
 INCOMPLETE_SESSION = "INCOMPLETE_SESSION"
 UNSTABLE_SAMPLING = "UNSTABLE_SAMPLING"
 HIGH_MISSING_DATA = "HIGH_MISSING_DATA"
+# Emitted when segment_runs in transformations/process_session.py L266
+# took its missing-relativeAltitude fallback (single-skiing-run default).
+# See docs/algorithm-spec.md Section 4 (Known limitations).
+MISSING_BAROMETER = "missing_barometer"
 
 
 def compute_confidence(
@@ -55,6 +59,7 @@ def compute_data_quality_flags(
     data_quality: dict[str, float],
     turn_count: int | None = None,
     session_duration_s: float | None = None,
+    missing_barometer: bool = False,
 ) -> list[str]:
     """Derive human-readable quality flags from data quality indicators.
 
@@ -66,6 +71,12 @@ def compute_data_quality_flags(
         Number of turns in session.
     session_duration_s : float | None
         Session duration in seconds.
+    missing_barometer : bool
+        True when the upload had no usable ``relativeAltitude`` and
+        ``segment_runs`` (transformations/process_session.py L266) fell
+        back to a single skiing run. Surfaces ``MISSING_BAROMETER`` in
+        the returned list so the API/UI can disclose that chairlift /
+        run segmentation was skipped.
 
     Returns
     -------
@@ -94,5 +105,8 @@ def compute_data_quality_flags(
 
     if session_duration_s is not None and session_duration_s < 60:
         flags.append(INCOMPLETE_SESSION)
+
+    if missing_barometer:
+        flags.append(MISSING_BAROMETER)
 
     return flags

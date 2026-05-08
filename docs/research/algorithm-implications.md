@@ -1,4 +1,4 @@
-# Algorithm Implications — From Literature to Code
+# Algorithm Implications: From Literature to Code
 
 *Engineering-flavored companion to [literature-synthesis.md](literature-synthesis.md).*
 *Last updated: April 2026.*
@@ -8,14 +8,14 @@ single-IMU, phone-only ski coaching pipeline. Each section names a
 layer of the current code, summarizes what the literature says about
 it, and then states an explicit decision tagged with one of:
 
-- `[adopt]` — the literature converges on a method we should implement
+- `[adopt]`: the literature converges on a method we should implement
   directly.
-- `[document-as-assumption]` — we keep the current behavior but it
+- `[document-as-assumption]`: we keep the current behavior but it
   must be recorded in [../algorithm-spec.md](../algorithm-spec.md) as a
   named assumption with a planned validation step.
-- `[future-work]` — the right answer requires sensor or compute we
+- `[future-work]`: the right answer requires sensor or compute we
   do not have today; deferred but tracked.
-- `[do-not-claim]` — a metric or accuracy bound the literature says we
+- `[do-not-claim]`: a metric or accuracy bound the literature says we
   cannot truthfully advertise on a single phone.
 
 Audience: you, future contributors, and any reviewer asking "why is
@@ -29,12 +29,12 @@ this number what it is?". The format is decision-first, citation-second.
 |-------|------|----------|-----|
 | Sensor fusion | [transformations/process_session.py](../../transformations/process_session.py) | Replace Sensor Logger fused angles with our own Madgwick | `[future-work]` |
 | Coordinate frames | pipeline-wide | Add per-session gravity + heading alignment | `[future-work]` |
-| Filter cutoff | [transformations/process_session.py](../../transformations/process_session.py) `preprocess()` | 4th-order Butterworth LP at 5 Hz (Elfmark 2021); **shipped** — keep fc = 5 Hz | `[adopt]` |
+| Filter cutoff | [transformations/process_session.py](../../transformations/process_session.py) `preprocess()` | 4th-order Butterworth LP at 5 Hz (Elfmark 2021); **shipped**: keep fc = 5 Hz | `[adopt]` |
 | Down-sample | same | Keep 100 → 20 Hz | `[document-as-assumption]` |
 | Run/lift segmentation | same `segment_runs()` | Keep thresholds; document as empirical | `[document-as-assumption]` |
 | Turn detection | same `detect_turns()` | Keep height/distance; recalibrate after frame alignment | `[document-as-assumption]` |
 | Carving vs skidding | [ski/analysis/turn_insights.py](../../ski/analysis/turn_insights.py) `compute_normalized_metrics()` | Mark `pressure_ratio` as proxy; **derive** zone cutoffs from \(v^2/r\) anchor (§6) before on-snow tuning; do not claim Adelsberger-grade detection | `[do-not-claim]` + `[adopt]` for desk physics |
-| Edge build proxy | [features/modules/carving_phase_module.py](../../features/modules/carving_phase_module.py) | `pelvis_edge_build_progressiveness` (deg/s) clipped to [0,1] in `edge_consistency` — often saturated; no literature anchor | `[document-as-assumption]` |
+| Edge build proxy | [features/modules/carving_phase_module.py](../../features/modules/carving_phase_module.py) | `pelvis_edge_build_progressiveness` (deg/s) clipped to [0,1] in `edge_consistency`: often saturated; no literature anchor | `[document-as-assumption]` |
 | GPS / speed | [transformations/process_session.py](../../transformations/process_session.py) | Keep apex GPS speed only; never use position for radius | `[adopt]` |
 | Centre-of-mass | implicit, pipeline-wide | Treat phone position as CoM proxy at the metre scale only | `[document-as-assumption]` |
 | Validation strategy | tests + desk physics + on-snow | Pattern tests; \(v^2/r\) anchoring for `pressure_ratio` zones; then intentional-error tuning; no absolute accuracy claims | `[adopt]` |
@@ -84,7 +84,7 @@ and stable across iOS versions.
 **Action.** Add `ski/processing/orientation.py` containing a
 `MadgwickAHRS` class and a wrapper that exposes
 `add_orientation(df) -> df` to be inserted in `preprocess()`. **Tag:**
-`[future-work]` — six-month window, before next-winter validation.
+`[future-work]`: six-month window, before next-winter validation.
 
 ---
 
@@ -139,7 +139,7 @@ session for a stable estimate):
 **Action.** Add `ski/processing/frame_alignment.py` and document the
 two assumptions in [../algorithm-spec.md](../algorithm-spec.md): the
 30 s median-gravity assumption and the "first skiing run is roughly
-straight" assumption. **Tag:** `[future-work]` — this unlocks honest
+straight" assumption. **Tag:** `[future-work]`: this unlocks honest
 edge-angle and turn-axis claims and should land before any threshold
 recalibration.
 
@@ -195,8 +195,8 @@ noise floor). Keep the 20 Hz target rate.
 **Action.** **Shipped** in `preprocess()`; regression gate is
 `python -m pytest tests/` (full suite). Optionally re-run
 `main.py` or `SessionProcessor` on archived sessions and diff
-`report.json` / DB aggregates when you want a numerical drift audit —
-the test suite is the day-to-day guard. **Tag:** `[adopt]` — small,
+`report.json` / DB aggregates when you want a numerical drift audit  - 
+the test suite is the day-to-day guard. **Tag:** `[adopt]`: small,
 literature-aligned, low risk.
 
 ---
@@ -219,7 +219,7 @@ def segment_runs(df, window_s=30, descent_thresh=-0.3, ascent_thresh=0.3,
 Falls back to GPS altitude if barometric pressure is missing.
 
 **What the literature says.** None of the nine papers in the corpus
-addresses ski/lift/idle segmentation directly — they all start from
+addresses ski/lift/idle segmentation directly: they all start from
 race-course data where the activity is known a priori. There is no
 gold-standard threshold to inherit.
 
@@ -244,8 +244,8 @@ def detect_turns(df, column="gyro_z", height=0.5, distance=20):
 
     Returns
     -------
-    peak_indices : ndarray  — row indices (into *df*) of detected peaks
-    segments : list[DataFrame]  — one per turn, sliced at midpoints
+    peak_indices : ndarray : row indices (into *df*) of detected peaks
+    segments : list[DataFrame] : one per turn, sliced at midpoints
     """
     signal = df[column].abs().values
     peak_indices, _ = find_peaks(signal, height=height, distance=distance)
@@ -277,7 +277,7 @@ height threshold for a chest/pelvis IMU.**
 `distance=20` as empirical thresholds. After Section 2's frame
 alignment lands, the gyro signal will be in a stable world-vertical
 axis instead of the tilted phone-z axis, so the threshold will need
-to be **recalibrated** — the appropriate value in a clean vertical
+to be **recalibrated**: the appropriate value in a clean vertical
 axis is likely lower (0.3–0.4 rad/s), since the noise floor improves.
 
 Also add a parallel zero-crossing detector for cross-validation, so
@@ -346,7 +346,7 @@ and \(r\), and (iii) sensor bias and pocket tilt are small.
 \(r = 10\,\text{m}\). Then \(a_c = 100/10 = 10\,\text{m/s}^2\) and
 \(g_{\text{expected}} = 10/9.81 \approx 1.02\,g\). So **unity is the
 natural centre** of the scale for that example, not 0.8 or 1.2 as
-magic anchors — any "carving band" should be derived as a **tolerance
+magic anchors: any "carving band" should be derived as a **tolerance
 around 1.0** (e.g. ±15–25 % accounting for GPS speed noise ~0.5 m/s,
 radius noise from \(\omega\) and frame misalignment, and the fact
 that `pelvis_peak_g_force` uses **total** `accel_mag`, not a
@@ -354,11 +354,11 @@ horizontally projected lateral component, so gravity and spine
 compression can inflate or deflate the numerator relative to pure
 \(v^2/r\)).
 
-**Skidding vs. aggressive — the sign of the ratio is ambiguous.**
+**Skidding vs. aggressive: the sign of the ratio is ambiguous.**
 
 - **Story A (ratio < 1):** measured lateral support (via `accel_mag`
   proxy) is **weaker** than the centripetal demand implied by the
-  \((v,r)\) pair in the denominator — e.g. true lateral load does not
+  \((v,r)\) pair in the denominator: e.g. true lateral load does not
   reach \(v^2/r\).
 
 - **Story B (ratio > 1 under skid-like mechanics):** a skidded path
@@ -369,7 +369,7 @@ compression can inflate or deflate the numerator relative to pure
   **too small** vs. the radius that would match the skier's actual
   lateral load, then `expected_g = v^2/(r g_0)` is **too large** and
   the ratio is **suppressed**. If the estimate is **too large**,
-  `expected_g` is **too small** and the ratio **inflates** — so
+  `expected_g` is **too small** and the ratio **inflates**: so
   **heavy skidding can push the ratio above 1**, which is the **opposite**
   of the current docstring labelling (**< 0.6 = skidding**). Until
   the desk pass plots `pressure_ratio` against video or intentional
@@ -426,8 +426,8 @@ quality score from it.
    once frame alignment (Section 2) exists.
 
 3. **Manual on-snow validation (next winter).** After the desk physics
-   pass, record 10 runs with deliberate intentional errors —
-   backseat, banking instead of edging, skidding — and check whether
+   pass, record 10 runs with deliberate intentional errors  - 
+   backseat, banking instead of edging, skidding: and check whether
    `pressure_ratio` and `torso_rotation_ratio` distributions separate
    the error categories from a clean baseline. That session **tunes**
    the physics-derived bands to real pocket noise; it is not the first
@@ -447,7 +447,7 @@ fits a line to fused `roll` vs. time from initiation to apex and
 reports **edge_build_progressiveness** as \(|d\,\mathrm{roll}/dt|\) in
 **deg/s**. [ski/analysis/turn_insights.py](../../ski/analysis/turn_insights.py)
 feeds the session median into `edge_consistency` via
-`clip(med_edge_prog, 0, 1)` — but typical slopes are **tens of deg/s**,
+`clip(med_edge_prog, 0, 1)`: but typical slopes are **tens of deg/s**,
 so the term **saturates at 1.0** for almost all turns unless the
 signal is rescaled.
 
@@ -471,7 +471,7 @@ dropping the clip once the desk study defines a sensible scale.
 **Today.** GPS columns from `Location.csv` (latitude, longitude,
 altitude, speed, bearing, accuracy fields) are merged into the IMU
 timeline via `merge_asof`. Only `speed` and `altitude` (or
-`relativeAltitude`) are consumed by metrics — position is *not* used
+`relativeAltitude`) are consumed by metrics: position is *not* used
 in any per-turn computation.
 
 **What the literature says.** BFU 2025 puts hard numbers on what we
@@ -496,7 +496,7 @@ metrics consume GPS) that documents these rules in the code itself.
 **Action.** No structural change today; document the rule in
 [../algorithm-spec.md](../algorithm-spec.md), and add a CI check that
 no metric module references `latitude`, `longitude`, or `bearing` at
-the per-turn level. **Tag:** `[adopt]` — this matches existing
+the per-turn level. **Tag:** `[adopt]`: this matches existing
 behaviour, and makes it permanent.
 
 ---
@@ -505,14 +505,14 @@ behaviour, and makes it permanent.
 
 **Today.** We do not estimate CoM at all. Every "turn radius",
 "g-force", and "edge angle" is computed from the phone's location and
-orientation, which is approximately the *thigh pocket* — sternum to
+orientation, which is approximately the *thigh pocket*: sternum to
 mid-pelvis depending on jacket layout.
 
 **What the literature says.** Fasel 2016 reports the offset of the
 neck position from the true CoM as 0.06 m and the offset of the hips
 as ~0.10 m, with their simplified two-IMU model achieving 0.12 m
 median CoM accuracy. So a sensor near the belly is roughly *one
-hip-offset* away from the CoM — usable as a proxy at the metre scale
+hip-offset* away from the CoM: usable as a proxy at the metre scale
 (turn radii are 5–30 m for recreational skiing) but not at the
 centimetre scale.
 
@@ -533,7 +533,7 @@ or "belly position" where the precision matters. **Tag:**
 
 **Today.** Test coverage in [tests/](../../tests/) is unit-level (160
 tests across pipeline, analytics, backend, metadata) but not
-*physical-truth* level — no test compares ski-ai's output against an
+*physical-truth* level: no test compares ski-ai's output against an
 independent measurement of the same skier's turn.
 
 **What the literature says.** Every paper that publishes a number
@@ -583,26 +583,26 @@ maps each weak score to a prescriptive coaching string via
 ```48:71:ski/analysis/turn_insights.py
 METRIC_ACTION_MAP = {
     "turn_rhythm": (
-        "Next run: focus on smoother, more consistent timing between turns — "
+        "Next run: focus on smoother, more consistent timing between turns: "
         "count a steady rhythm as you ski."
     ),
     "pressure_management": (
-        "Next run: apply pressure earlier in the turn — exaggerate it at initiation."
+        "Next run: apply pressure earlier in the turn: exaggerate it at initiation."
     ),
     "edge_consistency": (
         "Next run: commit to stronger edge angles through the middle of each turn."
     ),
     "rotary_stability": (
-        "Next run: reduce upper body rotation — let your skis guide the turn."
+        "Next run: reduce upper body rotation: let your skis guide the turn."
     ),
     "turn_symmetry": (
-        "Next run: match your left and right turns — focus on equal weight and shape."
+        "Next run: match your left and right turns: focus on equal weight and shape."
     ),
     "turn_shape_consistency": (
-        "Next run: aim for more consistent turn shapes — avoid mixing sharp and wide turns."
+        "Next run: aim for more consistent turn shapes: avoid mixing sharp and wide turns."
     ),
     "turn_efficiency": (
-        "Next run: stay balanced and flowing — avoid unnecessary skidding or braking."
+        "Next run: stay balanced and flowing: avoid unnecessary skidding or braking."
     ),
 }
 ```
@@ -639,7 +639,7 @@ are not promised by this writeup:
   have a labelled training set, which the manual on-snow validation
   will begin to provide).
 - Integration with any existing ski coaching app or wearable system.
-- Race-grade accuracy claims (Fasel 2013/2016 territory) — see
+- Race-grade accuracy claims (Fasel 2013/2016 territory): see
   Section 9.
 
 These items live in the "if we ever scale beyond a single phone"

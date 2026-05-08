@@ -1,4 +1,4 @@
-# ski-ai — System Architecture
+# ski-ai: System Architecture
 
 ## Current System
 
@@ -118,7 +118,7 @@ single reusable method call.
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    8. METADATA (side-car, feeds analytics)           │
 │                                                                     │
-│   MetadataLoader  ─── load_skier_profile("maggie")                  │
+│   MetadataLoader  ─── load_skier_profile("skier_01")                │
 │                   ─── load_ski_profile("sheeva10_104_158")           │
 │                   ─── load_session_metadata(session_path)           │
 │                                                                     │

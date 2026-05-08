@@ -32,7 +32,7 @@ type Subscription = { remove: () => void };
 type Props = { go: Go };
 
 // Polling intervals for the per-sensor stream listeners.
-const IMU_INTERVAL_MS = 10; // 100 Hz — matches SensorLogger pipeline.
+const IMU_INTERVAL_MS = 10; // 100 Hz; matches SensorLogger pipeline.
 const BARO_INTERVAL_MS = 1000; // 1 Hz.
 const UI_TICK_MS = 250;
 /** Wall-clock windows for achieved IMU rate monitoring. */
@@ -120,7 +120,7 @@ export default function RecordScreen({ go }: Props) {
       const a = await Accelerometer.requestPermissionsAsync();
       const g = await Gyroscope.requestPermissionsAsync();
       const loc = await Location.requestForegroundPermissionsAsync();
-      // Barometer has no permission prompt on iOS — skip.
+      // Barometer has no permission prompt on iOS; skip.
 
       const motion: PermStatus =
         a.status === 'granted' && g.status === 'granted'
@@ -175,7 +175,7 @@ export default function RecordScreen({ go }: Props) {
       if (state === 'recording' || state === 'stopping') {
         Alert.alert(
           'Recording in progress',
-          'Tap Stop Recording before leaving this screen — otherwise the session will be lost.',
+          'Tap Stop Recording before leaving this screen, or the session will be lost.',
         );
         return true;
       }
@@ -300,7 +300,7 @@ export default function RecordScreen({ go }: Props) {
         );
         subsRef.current.push(locSub);
       } catch (e) {
-        // Don't fail the whole recording — just leave GPS empty.
+        // Don't fail the whole recording; just leave GPS empty.
         // eslint-disable-next-line no-console
         console.warn('watchPositionAsync failed:', e);
       }
@@ -378,7 +378,7 @@ export default function RecordScreen({ go }: Props) {
     if (elapsed < MIN_SESSION_S) {
       Alert.alert(
         'Short session',
-        'Short session — you may not get scores. Keep recording?',
+        'Short session: you may not get scores. Keep recording?',
         [
           { text: 'Keep Recording', style: 'cancel' },
           { text: 'Stop Anyway', style: 'destructive', onPress: () => void finalizeStop() },
@@ -554,7 +554,7 @@ export default function RecordScreen({ go }: Props) {
       {perms.location !== 'granted' ? (
         <View style={styles.warnBox}>
           <Text style={styles.warnText}>
-            GPS unavailable — turn detection and speed metrics will be limited. You can grant
+            GPS unavailable: turn detection and speed metrics will be limited. You can grant
             Location in iOS Settings and restart this screen.
           </Text>
         </View>
@@ -563,7 +563,7 @@ export default function RecordScreen({ go }: Props) {
       {isRecording && sensorRateWarning ? (
         <View style={styles.warnBox}>
           <Text style={styles.warnText}>
-            Sensor rate low — move to open area or restart recording.
+            Sensor rate low: move to open area or restart recording.
           </Text>
         </View>
       ) : null}
@@ -583,7 +583,7 @@ export default function RecordScreen({ go }: Props) {
         {isRecording && !baroHealthy ? (
           <View style={styles.baroWarnLine}>
             <Text style={styles.baroWarnText}>
-              Barometer unavailable — chairlift detection disabled
+              Barometer unavailable: chairlift detection disabled
             </Text>
           </View>
         ) : null}
@@ -613,7 +613,7 @@ export default function RecordScreen({ go }: Props) {
             if (isRecording || isStopping) {
               Alert.alert(
                 'Recording in progress',
-                'Tap Stop Recording before leaving this screen — otherwise the session will be lost.',
+                'Tap Stop Recording before leaving this screen, or the session will be lost.',
               );
               return;
             }
@@ -646,8 +646,8 @@ function GpsFixQualityLine({ quality }: { quality: GpsFixQuality }) {
     quality === 'good'
       ? 'GPS good'
       : quality === 'degraded'
-        ? 'GPS weak — speed metrics may be less accurate'
-        : 'No GPS — speed and run segmentation unavailable';
+        ? 'GPS weak: speed metrics may be less accurate'
+        : 'No GPS: speed and run segmentation unavailable';
   return (
     <View style={styles.gpsQualityRow}>
       <View style={[styles.qualityDot, dotStyle]} />

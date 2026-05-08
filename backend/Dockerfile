@@ -7,7 +7,7 @@
 # Swagger UI: http://localhost:10000/api/docs
 
 # Pin Debian release: default `slim` tracks testing (e.g. trixie) and mirrors can hit hash mismatches.
-# Bookworm has stable indexes; deps install from wheels — no `build-essential` needed in most cases.
+# Bookworm has stable indexes; deps install from wheels: no `build-essential` needed in most cases.
 FROM python:3.11-slim-bookworm
 
 WORKDIR /app

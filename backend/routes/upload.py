@@ -11,10 +11,11 @@ from pathlib import Path
 from uuid import uuid4
 
 import redis.exceptions
-from fastapi import APIRouter, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, HTTPException
 from rq import Queue
 from starlette.responses import JSONResponse
 
+from backend.auth import require_api_key
 from backend.config import (
     RAW_DIR,
     MAX_UPLOAD_MB,
@@ -79,7 +80,7 @@ def _fsync_extracted_tree(session_dir: Path) -> None:
 
 
 @router.post("/upload-session")
-async def upload_session(file: UploadFile):
+async def upload_session(file: UploadFile, _: None = Depends(require_api_key)):
     contents = await file.read()
 
     if len(contents) > MAX_UPLOAD_MB * 1024 * 1024:
