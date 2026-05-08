@@ -62,5 +62,33 @@ Thumbs.db
 .docker/
 
 # Cursor / local AI (optional — remove these lines if you want to share rules)
-# .cursor/
+.cursor/
 node_modules
+
+# Research PDFs (licensed, not ours to redistribute)
+research/
+research/*.pdf
+
+# Mobile build artifacts
+mobile/.expo/
+mobile/ios/build/
+mobile/android/build/
+mobile/dist/
+
+# Additional key formats
+*.p12
+*.pfx
+*.jks
+*.crt
+*.cer
+*.csr
+
+# Coverage / profiling
+htmlcov/
+.coverage
+coverage.xml
+
+# Vite / Vercel cache
+frontend/.vite/
+.vercel/
+docs/MASTER_PLAN.md

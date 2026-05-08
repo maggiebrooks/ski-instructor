@@ -582,7 +582,7 @@ export default function Session() {
     if (!window.confirm('Delete this session?')) return
     try {
       await deleteSession(id)
-      navigate('/sessions')
+      navigate('/')
     } catch {
       setError('Failed to delete session')
     }
@@ -605,7 +605,10 @@ export default function Session() {
       <div className="error-card-wrap">
         <div className="error-card">
           <h1>Session not found</h1>
-          <p>Sessions are not persisted in demo mode. Upload a new session to analyze.</p>
+          <p>
+            This is an early preview — session data isn&apos;t persisted between server restarts.
+            Upload a new session or try the sample on the home page.
+          </p>
           <Link to="/" className="btn btn-primary">
             New Upload
           </Link>
@@ -619,7 +622,10 @@ export default function Session() {
       <div className="error-card-wrap">
         <div className="error-card">
           <h1>Session not found</h1>
-          <p>Sessions are not persisted in demo mode. Upload a new session to analyze.</p>
+          <p>
+            This is an early preview — session data isn&apos;t persisted between server restarts.
+            Upload a new session or try the sample on the home page.
+          </p>
           <Link to="/" className="btn btn-primary">
             New Upload
           </Link>
@@ -632,10 +638,6 @@ export default function Session() {
     return (
       <div className="shell-error-generic">
         <p style={{ color: 'var(--color-danger)', marginBottom: 16 }}>{error}</p>
-        <Link to="/sessions" style={{ fontWeight: 600 }}>
-          All sessions
-        </Link>
-        {' · '}
         <Link to="/" style={{ fontWeight: 600 }}>
           Back to upload
         </Link>
@@ -681,10 +683,6 @@ export default function Session() {
           </pre>
         )}
         <p style={{ marginTop: 24 }}>
-          <Link to="/sessions" style={{ fontWeight: 600 }}>
-            All sessions
-          </Link>
-          {' · '}
           <Link to="/" style={{ fontWeight: 600 }}>
             Back to upload
           </Link>
@@ -736,16 +734,12 @@ export default function Session() {
 
   return (
     <div className="shell-results">
-      <DemoModeBanner />
+      <DemoModeBanner context="session" />
 
       <nav className="results-nav">
         <div className="results-nav-left">
           <Link to="/" style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
             Ski Recorder
-          </Link>
-          <span style={{ color: 'var(--color-text-muted)' }}> / </span>
-          <Link to="/sessions" style={{ color: 'var(--color-text-secondary)' }}>
-            Sessions
           </Link>
           <span style={{ color: 'var(--color-text-muted)' }}> / </span>
           <span className="results-nav-crumb-strong">

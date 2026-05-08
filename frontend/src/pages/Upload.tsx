@@ -1,8 +1,9 @@
-import { useCallback, useId, useRef, useState, type DragEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useId, useRef, useState, type DragEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 
 import { uploadSession } from '../api'
+import DemoModeBanner from '../components/DemoModeBanner'
 
 function formatUploadError(err: unknown): string {
   if (err instanceof Error && !('isAxiosError' in err)) {
@@ -62,12 +63,29 @@ function UploadArrowIcon() {
 
 export default function Upload() {
   const inputId = useId()
+  const aboutTitleId = useId()
+  const aboutDialogId = useId()
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!aboutOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAboutOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [aboutOpen])
 
   const pickFiles = useCallback((list: FileList | null) => {
     const f = list?.[0]
@@ -121,24 +139,33 @@ export default function Upload() {
 
   return (
     <div className="upload-light-page">
+      <DemoModeBanner context="upload" />
       <div className="upload-light-inner">
         <div className="upload-light-top">
           <span className="upload-wordmark">Ski Recorder</span>
-          <Link to="/sessions" className="upload-light-sessions">
-            My Sessions
-          </Link>
+          <button
+            type="button"
+            className="upload-info-btn"
+            onClick={() => setAboutOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={aboutOpen}
+            aria-controls={aboutDialogId}
+            aria-label="About Ski Recorder"
+          >
+            <span aria-hidden>ⓘ</span>
+          </button>
         </div>
 
         <h1 className="upload-light-headline">Analyze Your Run</h1>
         <p className="upload-light-sub">
-          Ski Recorder uses your iPhone&apos;s built-in motion sensors to record your ski sessions,
-          then analyzes your technique across six coaching dimensions used by PSIA-certified
-          instructors: edge control, rotary stability, pressure management, turn symmetry, turn
-          shape, and rhythm.
+          Ski Recorder uses your iPhone&apos;s motion sensors to measure your technique across seven
+          movement dimensions used by PSIA-certified instructors — rotary stability, edge
+          consistency, pressure management, turn symmetry, turn shape, turn rhythm, and turn
+          efficiency.
         </p>
         <p className="upload-light-sub upload-light-sub-caveat">
-          Upload a session ZIP recorded with the Ski Recorder iOS app to get started. Processing
-          runs on a free-tier server and typically takes 30–90 seconds.
+          Built to complement your existing coaching protocol. Upload a session recorded with the Ski
+          Recorder iOS app to get started.
         </p>
 
         <label
@@ -236,6 +263,51 @@ export default function Upload() {
           </a>
         </div>
       </div>
+
+      {aboutOpen ? (
+        <div
+          className="upload-modal-overlay"
+          role="presentation"
+          onClick={() => setAboutOpen(false)}
+        >
+          <div
+            id={aboutDialogId}
+            className="upload-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={aboutTitleId}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="upload-modal-close-x"
+              onClick={() => setAboutOpen(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <h2 id={aboutTitleId} className="upload-modal-title">
+              About Ski Recorder
+            </h2>
+            <p className="upload-modal-body">
+              Ski Recorder is a full-stack sports analytics app that processes
+              raw IMU sensor data from an iPhone. This is used to determine technique scores across seven PSIA movement
+              dimensions, using a Butterworth-filtered signal pipeline, Madgwick sensor fusion, and
+              automated turn segmentation. Currently in active development toward a closed beta with
+              real skiers in winter 2026–2027.
+            </p>
+            <p className="upload-modal-stack">
+              React 19 + Vite · FastAPI · RQ/Redis · SQLite → PostgreSQL · Expo React Native
+            </p>
+            <a href="#" className="upload-modal-github">
+              View source on GitHub →
+            </a>
+            <button type="button" className="upload-modal-close-btn" onClick={() => setAboutOpen(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

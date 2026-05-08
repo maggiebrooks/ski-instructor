@@ -1,3 +1,4 @@
+// NOTE: Hidden in demo mode. Re-enable route in App.tsx when persistence is ready (PostgreSQL migration, auth).
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listSessions, type SessionListItem } from '../api'

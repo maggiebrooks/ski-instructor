@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import Upload from './pages/Upload'
 import Session from './pages/Session'
-import SessionsPage from './pages/SessionsPage'
 
 function NotFoundPage() {
   return (
@@ -25,7 +24,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Upload />} />
-        <Route path="/sessions" element={<SessionsPage />} />
+        <Route path="/sessions" element={<Navigate to="/" replace />} />
         <Route path="/session/:id" element={<Session />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

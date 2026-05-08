@@ -58,6 +58,7 @@ export interface SessionListItem {
   created_at?: string
 }
 
+// NOTE: Used by SessionsPage. Dormant in demo mode. Re-enable when sessions endpoint is active for real users.
 export async function listSessions(): Promise<SessionListItem[]> {
   const res = await api.get<SessionListItem[]>('/sessions', {
     timeout: SESSION_READ_TIMEOUT_MS,
