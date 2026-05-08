@@ -45,7 +45,7 @@ Results include an overall score, per-dimension breakdowns with progress bars, t
 | Database | SQLite → PostgreSQL migration planned Nov 2026 |
 | Deployment | Vercel (frontend) · Render (backend + worker) |
 | Signal processing | NumPy · SciPy · Pandas |
-| Testing | pytest — 160 tests |
+| Testing | pytest — 224 tests |
 
 ---
 
@@ -111,7 +111,7 @@ Upload a Sensor Logger `.zip` or use the sample session from the live demo.
 python -m pytest tests/ -v
 ```
 
-160 tests covering the pipeline, turn analytics, biomechanical scoring, feature modules, and metadata loading.
+224 tests covering the pipeline, turn analytics, biomechanical scoring, feature modules, and metadata loading.
 
 ---
 

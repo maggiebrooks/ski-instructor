@@ -1,3 +1,4 @@
+# LEGACY: Prefer Procfile.render + backend/start.sh for Render deploys. Safe to delete if unused.
 """
 Optional programmatic RQ worker (same Redis + queue as production).
 

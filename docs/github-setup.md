@@ -1,3 +1,4 @@
+<!-- Internal contributor doc — not required reading for portfolio viewers -->
 # GitHub: private repo, safety, and first push
 
 This project can hold **uploaded sensor data** and **session IDs**. Treat the remote as **private** unless you intentionally open-source a scrubbed snapshot.
