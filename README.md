@@ -1,313 +1,143 @@
-# ski-ai
+# Ski Recorder
 
-Sensor-based ski analytics platform. Records IMU and GPS data with
-[Sensor Logger](https://www.tszheichoi.com/sensorlogger) on an iPhone,
-uploads via a web UI, and produces biomechanical feedback scored against the
-PSIA Five Fundamentals of Alpine Skiing.
+**Sensor-based ski analytics platform that turns iPhone IMU data into biomechanical technique scores.**
 
-**Status:** Full-stack web application with FastAPI backend, React frontend,
-Redis job queue, and 160 unit tests. Six biomechanical movement scores with
-physics-based normalization, turn signature visualization, and session
-comparison. Processing version 2.0.0.
+A skier records a run using the iOS app. The app captures accelerometer, gyroscope, barometer, and GPS data at up to 100 Hz. That session uploads to a FastAPI backend, moves through a signal processing pipeline, and produces scored feedback across seven movement dimensions aligned with PSIA instructor methodology — in about 60 seconds.
+
+**Live demo:** https://ski-instructor.vercel.app — includes a sample session download if you want to see the full pipeline run end to end.
 
 ---
 
-## Quick Start
+## What it does
 
-### Run the full stack (development)
+Raw IMU data from a phone in a jacket pocket isn't useful on its own. The pipeline does several things to make it meaningful:
 
-**One command** (from repo root; uses `venv/bin/honcho`, starts Redis only if
-nothing is already on `127.0.0.1:6379`):
+- **Butterworth low-pass filtering** removes high-frequency noise from the accelerometer and gyroscope signals
+- **Madgwick sensor fusion** combines gyroscope and accelerometer readings into stable orientation estimates
+- **Turn segmentation** identifies individual turns from the altitude and orientation signal, producing a labeled turn sequence for the full run
+- **Feature extraction** computes per-turn physics quantities: centripetal force ratio, torso rotation ratio, ski-length-normalized turn radius, edge build rate, and timing intervals
+- **Biomechanical scoring** maps those features to seven movement scores using physics-based normalization, enabling cross-skier and cross-equipment comparison
+
+The seven scored dimensions:
+
+| Score | What it measures |
+|---|---|
+| Rotary Stability | Upper body quiet during turns |
+| Edge Consistency | Clean, consistent ski grip through each arc |
+| Pressure Management | Loading and releasing the ski through the turn |
+| Turn Symmetry | Left/right balance in shape and radius |
+| Turn Shape Consistency | Repeatability of turn arcs across a run |
+| Turn Rhythm | Consistency of timing between turns |
+| Turn Efficiency | Speed carried through turns vs. scrubbed off |
+
+Results include an overall score, per-dimension breakdowns with progress bars, turn signature visualization, coaching notes keyed to low-scoring dimensions, and a stats panel (turn count, average radius, g-force, speed).
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Mobile | Expo React Native (iOS) — IMU + GPS recording |
+| Frontend | React 19 + Vite + TypeScript |
+| Backend | FastAPI (Python) |
+| Job queue | RQ + Redis |
+| Database | SQLite → PostgreSQL migration planned Nov 2026 |
+| Deployment | Vercel (frontend) · Render (backend + worker) |
+| Signal processing | NumPy · SciPy · Pandas |
+| Testing | pytest — 160 tests |
+
+---
+
+## Architecture
+
+```
+iPhone (Expo RN)
+    │  ZIP of CSVs (accel, gyro, baro, GPS)
+    ▼
+POST /api/upload-session
+    │  preflight validation + dedup
+    ▼
+Redis / RQ job queue
+    ▼
+Worker: transformations/process_session.py
+    ├── Butterworth filter
+    ├── Madgwick fusion → orientation
+    ├── Turn segmentation
+    ├── Feature extraction (pelvis_turn_module, carving_phase_module)
+    └── Biomechanical scoring → session report JSON
+    ▼
+GET /api/session/{id}  (polled by frontend until complete)
+    ▼
+React results dashboard
+```
+
+---
+
+## Project status and roadmap
+
+This is an active solo build. Current state:
+
+- Full pipeline working end to end with real session data
+- 160 unit tests across pipeline, analytics, scoring, and metadata
+- Deployed and publicly accessible (demo mode — sample data only)
+- Physics-based normalization validated on real runs
+
+**Months 1–6 (now):** Infrastructure polish, PostgreSQL migration, auth layer, Render deployment stability
+
+**Months 7–12:** Closed beta with ~30 skiers across ability levels. Collecting labeled ground truth data.
+
+**Months 13–18:** Train ML models on labeled beta data to replace rule-based heuristics. App Store submission.
+
+The rule-based scoring is intentionally conservative — it's designed to produce defensible results on limited data while the labeled dataset is being built. Accuracy integrity is the top priority; the ML layer doesn't ship until there's enough real data to validate it properly.
+
+---
+
+## Known limitations
+
+- **Single sensor placement** (belly/front jacket pocket). Dual-sensor setup (chest + boot) would unlock upper/lower body separation, which is the next hardware iteration.
+- **Turn detection parameters** (`height=0.5`, `distance=20`) are starting values tuned for groomed intermediate terrain. Per-terrain calibration is on the roadmap.
+- **Phone placement variance** — jacket movement introduces noise. The Butterworth filter attenuates most of it but placement consistency matters, which is why phone placement is standardized in the recording protocol.
+- **Altitude-only segmentation** — adding gyroscope + speed confirmation would improve turn boundary accuracy on flat or variable terrain.
+
+---
+
+## Running locally
+
+**Prerequisites:** Python 3.12+, Node.js 18+, Redis
 
 ```bash
+# Clone and install
+git clone https://github.com/maggiebrooks/ski-ai
+cd ski-ai
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cd frontend && npm install && cd ..
+
+# Start everything (API + worker + frontend + Redis)
 ./scripts/dev.sh
 ```
 
-If you prefer not to use the script: with Redis already running,
-`./venv/bin/honcho start`; if Redis is not running,
-`./venv/bin/honcho -f Procfile.with-redis start`.
+Open http://localhost:5173. API docs at http://localhost:8000/api/docs.
+
+Upload a Sensor Logger `.zip` or use the sample session from the live demo.
 
 ---
 
-First-time setup (still one-time):
+## Tests
 
 ```bash
-# Prerequisites: Python 3.12+, Node.js 18+, Redis (or let Procfile.with-redis start it)
-
-# From repository root — virtualenv for this repo:
-#   python3 -m venv venv   # only if venv/ does not exist yet
-
-# Install Python deps
-python3 -m pip install -r requirements.txt
-python3 -m pip install fastapi uvicorn redis rq python-multipart honcho
-
-# Install frontend deps
-cd frontend && npm install && cd ..
+python -m pytest tests/ -v
 ```
 
-**Manual multi-terminal** (equivalent to what Honcho runs):
-
-```bash
-# Skip redis-server if Redis is already running on 6379.
-redis-server
-rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
-uvicorn backend.app:app --reload --port 8000
-cd frontend && npm run dev
-```
-
-[`Procfile`](Procfile) runs API + worker + Vite; [`Procfile.with-redis`](Procfile.with-redis) adds `redis-server` when the dev script detects nothing on port 6379.
-
-Open `http://localhost:5173`. API docs: `http://localhost:8000/api/docs`.
-Upload a Sensor Logger `.zip` and watch the results appear.
-
-**Railway** (`ski-ai-api`, `ski-ai-worker`, Redis) is for **production** only.
-For local dev you still run Redis + API + worker on your machine (or point
-`REDIS_URL` at a tunnel — not required for typical setup).
-
-### Docker (API + worker, Render-compatible)
-
-Build from the **repository root** (the image needs `ski/`, `data/`, `features/`, `transformations/`, not only `backend/`):
-
-```bash
-docker build -f backend/Dockerfile -t ski-ai-backend .
-docker run --rm -p 10000:10000 -e REDIS_URL=redis://host.docker.internal:6379 ski-ai-backend
-```
-
-- Swagger UI: `http://localhost:10000/api/docs` (API is mounted under `/api`).
-- The image runs **`backend/start.sh`**: RQ worker (`rq worker ski-pipeline`) plus uvicorn in one container — shared filesystem for uploads. Set `REDIS_URL`. Do not start a second worker elsewhere.
-- Optional Blueprint: [`render.yaml`](render.yaml).
-- If `docker build` fails during `apt-get` with **Hash Sum mismatch**, retry the build (mirror glitch) or ensure the Dockerfile uses a pinned base like `python:3.11-slim-bookworm`. If `pip install` later fails compiling a package, add `build-essential` back in the Dockerfile.
-
-### Run the pipeline directly (no server)
-
-```bash
-python main.py
-```
-
-### Run tests
-
-```bash
-python -m pytest tests/ -v    # 160 tests
-```
+160 tests covering the pipeline, turn analytics, biomechanical scoring, feature modules, and metadata loading.
 
 ---
 
-## Deployment
+## Built by
 
-This project uses **[Railway](https://railway.app/)** for the backend API, background worker, and Redis.
+Maggie Brooks — full-stack engineer, PSIA Level 1 ski instructor, former Team USA synchronized figure skater.
 
-### Services
+The project came from a real problem: ski instruction is almost entirely visual and verbal, with no objective data layer. Ski Recorder is an attempt to build that data layer in a way that complements coaching rather than replacing it.
 
-| Service | Role |
-|---------|------|
-| **ski-ai** (recommended) | Single service: `backend/start.sh` runs `rq worker ski-pipeline` + FastAPI — one worker, shared disk. |
-| **ski-ai-api** + **ski-ai-worker** | Legacy split: two services must share storage or use separate worker only if you know the tradeoffs. |
-| **Redis** | Managed via Railway Redis (or compatible add-on) |
-
-### Environment variables
-
-| Variable | Notes |
-|----------|--------|
-| **`REDIS_URL`** | Redis connection string — **required** for the API and for `rq worker` (same value in a split setup; one env in a single-container deploy). |
-| **`PERSISTENT_DIR`** | Optional. Mount a Railway Volume (e.g. at `/persist`) and set `PERSISTENT_DIR=/persist` so sessions, SQLite, and logs survive deploys. Defaults to the app root (`/app` in Docker). |
-| **`RAW_DIR`**, **`PROCESSED_DIR`**, **`PLOTS_DIR`** | Override only if you need non-default layout; normally derive from `PERSISTENT_DIR`. |
-| **`PREFLIGHT_MIN_DURATION_S`**, **`PREFLIGHT_MAX_DURATION_S`** | Upload preflight gates (seconds). Runs **before enqueue** to reject junk uploads early. |
-| **`PREFLIGHT_MIN_ROWS`**, **`PREFLIGHT_MAX_ROWS`** | Upload preflight gates (rows per IMU). Runs **before enqueue** to cap work and reject tiny/huge sessions. |
-| **`PREFLIGHT_FLAG_MIN_DURATION_S`**, **`PREFLIGHT_FLAG_MIN_ROWS`** | Upload preflight *accept-but-warn* thresholds. Sessions below these may return `preflight_status=flag` (still enqueued). |
-| **`RAW_RETENTION_DAYS`**, **`RAW_DELETE_REQUIRES_PROCESSED`** | Raw lifecycle cleanup knobs for `scripts/cleanup_raw_sessions.py` (optional). |
-
-If `REDIS_URL` is missing on either service, uploads may fail to enqueue or jobs may never run.
-
-### Scaling (important)
-
-File-based uploads live on **local disk** inside the service. **Use exactly one replica** for the combined API+worker service. If Railway (or another host) runs multiple instances, `POST /upload-session` may write files on instance A while the background worker on instance B runs the job — you will see `Raw session directory missing` in worker logs. Fix: set replicas to **1**, or move raw storage to object storage (S3/R2) and read from there in the worker.
-
-### Running locally
-
-```bash
-# Terminal 1 — Redis
-redis-server
-
-# Terminal 2 — API
-uvicorn backend.app:app --reload --port 8000
-
-# Terminal 3 — Worker (from repository root; same queue as production)
-rq worker ski-pipeline --url "${REDIS_URL:-redis://localhost:6379}"
-
-# Terminal 4 — Frontend (optional)
-cd frontend && npm run dev
-```
-
-### Accessing the API
-
-| | Path |
-|---|------|
-| **Swagger UI** | `/api/docs` |
-| **OpenAPI JSON** | `/api/openapi.json` |
-
-Example endpoints:
-
-- `POST /api/upload-session`
-- `GET /api/session/{id}`
-- `DELETE /api/session/{id}`
-
-On Railway, open **`https://<your-api-host>/api/docs`** (e.g. `https://ski-ai-api-production.up.railway.app/api/docs` if that matches your service URL).
-
-**Tips**
-
-- Use **`/api/docs`**, not `/docs` on the root app — REST routes are mounted under `/api`, so Swagger lives on the API sub-app.
-- Ensure the **worker** service has **`REDIS_URL`**, not only the web API.
-
----
-
-## Frontend deployment (MVP)
-
-**Goal:** Ship the upload UI and session pages on a public URL, talking to the live Railway API.
-
-| Option | Notes |
-|--------|--------|
-| **Vercel** (recommended for MVP) | React + Vite deploys easily; free tier; set one env var for the API base. |
-| **Railway** | Possible to Dockerize or static-serve the frontend; more moving parts than Vercel for a Vite SPA. |
-
-**MVP path**
-
-1. Keep **API + worker + Redis** on Railway.
-2. Deploy **`frontend/`** on **Vercel** (or similar static host).
-3. Set **`VITE_API_BASE_URL`** to your Railway API **including `/api`** (see below).
-
-### Vercel (suggested steps)
-
-1. Push the repo to GitHub (if it is not already).
-2. Vercel → **Add New** → **Project** → import the repo; set the **root directory** to `frontend` if Vercel should only build the SPA.
-3. **Environment variable** (Production — adjust host to your Railway URL):
-
-   ```bash
-   VITE_API_BASE_URL=https://ski-ai-api-production.up.railway.app/api
-   ```
-
-   Axios uses paths like `/upload-session`; `baseURL` must be the API prefix **`.../api`**, not only the origin.
-
-4. Build and deploy, then test upload and session pages against production.
-
----
-
-## Documentation
-
-| Document | Contents |
-|----------|----------|
-| [Project Status](docs/project-status.md) | Current state, architecture diagram, what's built, what's next |
-| [API Reference](docs/api.md) | HTTP endpoints, storage layer, job tracking, pipeline API, analytics API |
-| [Architecture](docs/architecture.md) | Pipeline diagram, 8 systems, data hierarchy, scoring, feature modules, roadmap |
-| [Two-Week Launch Plan](docs/two-week-launch-plan.md) | Web deployment execution plan with daily milestones |
-| [Vision](docs/vision.md) | Product vision, principles, why ski-ai |
-| [Data](docs/data.md) | Sensor Logger source files, output schema |
-| [Configuration](docs/configuration.md) | Pipeline parameters, database schema |
-| [Dev wins](docs/dev-wins/2026-04-28.md) | Daily changelog of notable shipped improvements |
-| [Metadata](docs/metadata.md) | Skier/ski profiles, session metadata, MetadataLoader |
-| [Testing](docs/testing.md) | Test suite overview |
-| [GitHub setup](docs/github-setup.md) | Private repo, SSH, `.gitignore`, secrets |
-
----
-
-## Project Structure
-
-```
-ski-ai/
-├── backend/                         # FastAPI server
-│   ├── app.py                       # App setup, CORS, static mount, routes
-│   ├── config.py                    # Env-based config (dirs, Redis, upload limit)
-│   ├── models.py                    # Jobs table + hash dedup
-│   ├── storage.py                   # Storage abstraction (local → S3)
-│   ├── worker.py                    # RQ worker: pipeline + artifact writes
-│   └── routes/
-│       ├── upload.py                # POST /api/upload-session
-│       ├── sessions.py              # GET status, list, plots
-│       └── metadata.py              # GET session metadata
-│
-├── frontend/                        # React + Vite
-│   ├── src/
-│   │   ├── App.tsx                  # Router (/, /session/:id)
-│   │   ├── api.ts                   # Axios helpers
-│   │   ├── pages/Upload.tsx         # Upload page
-│   │   ├── pages/Session.tsx        # Processing + results page
-│   │   └── components/Progress.tsx  # Pipeline progress indicator
-│   └── vite.config.ts               # Dev proxy /api → :8000
-│
-├── ski/                             # Core analytics package
-│   ├── processing/session_processor.py  # Pipeline orchestration
-│   ├── analysis/turn_analyzer.py        # DB-backed analytics
-│   ├── analysis/turn_insights.py        # Biomechanical scoring
-│   ├── analysis/turn_signature.py       # Turn curve visualization
-│   └── metadata/metadata_loader.py      # YAML profile loader
-│
-├── features/modules/                # Pluggable feature extraction
-│   ├── pelvis_turn_module.py        # Turn physics (angle, radius, g-force)
-│   └── carving_phase_module.py      # Phase detection + carving metrics
-│
-├── transformations/process_session.py  # Core pipeline functions
-├── data/                            # SQLite database
-├── sessions/                        # raw/ processed/ plots/
-├── tests/                           # 160 tests across 5 files
-├── docs/                            # Documentation
-└── logs/                            # api.log, worker.log
-```
-
----
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/upload-session` | Upload ZIP, validate, dedup, enqueue |
-| `GET` | `/api/session/{id}` | Status + report (poll during processing) |
-| `GET` | `/api/sessions` | List completed sessions |
-| `GET` | `/api/session/{id}/plot/{name}` | Serve plot PNGs |
-| `GET` | `/api/session/{id}/metadata` | Skier/ski/session metadata |
-| `GET` | `/api/health` | Health check |
-
-See [docs/api.md](docs/api.md) for request/response details.
-
----
-
-## Movement Scores
-
-Six biomechanical scores (0-1) based on the PSIA Five Fundamentals:
-
-| Score | Signal |
-|-------|--------|
-| Rotary Stability | Upper body quiet during turns (torso rotation ratio) |
-| Edge Consistency | Turn radius CV, edge build, radius stability |
-| Pressure Management | Ski loading efficiency (centripetal force ratio) |
-| Turn Symmetry | Left/right balance in shape and radius |
-| Turn Shape Consistency | Repeatability of turn radius and angle |
-| Turn Rhythm | Regularity of turn timing |
-
-Physics-based normalization enables cross-skier and cross-equipment
-comparison via pressure ratio, torso rotation ratio, and ski-length
-normalized radius.
-
----
-
-## Known Limitations
-
-1. Turn detection parameters (`height=0.5`, `distance=20`) are starting
-   values and should be tuned per-terrain.
-2. Single-sensor only (pelvis phone). Dual-phone (chest + boot) would
-   unlock upper/lower body separation metrics.
-3. Processed CSVs are large. Parquet output planned.
-4. Segmentation uses altitude only. Gyro + speed would improve accuracy.
-
----
-
-## Roadmap
-
-See [docs/two-week-launch-plan.md](docs/two-week-launch-plan.md) for the
-active deployment plan and [docs/architecture.md](docs/architecture.md)
-for the long-term vision.
-
-**Completed:** Pipeline, feature modules, biomechanical scoring,
-physics-based normalization, turn signatures, metadata system, backend API,
-storage abstraction, React frontend skeleton, job tracking, dedup, logging.
-
-**Next:** Upload page polish, results dashboard, GPS map, mobile responsive,
-session comparison, frontend on Vercel (see [Frontend deployment (MVP)](#frontend-deployment-mvp)).
+[maggiebrooks.com](https://maggiebrooks.com) · [LinkedIn](https://linkedin.com/in/maggiebrooks)
