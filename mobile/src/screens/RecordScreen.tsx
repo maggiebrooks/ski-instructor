@@ -4,6 +4,7 @@ import {
   Animated,
   BackHandler,
   Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import {
   uint8ToBase64,
   type BaroSample,
   type LocationSample,
+  type PhonePlacement,
   type Sample,
   type SessionQualityFile,
 } from '../lib/csv';
@@ -93,6 +95,7 @@ export default function RecordScreen({ go }: Props) {
   const [sensorRateWarning, setSensorRateWarning] = useState(false);
   const [gpsFixQuality, setGpsFixQuality] = useState<GpsFixQuality>('none');
   const [baroHealthy, setBaroHealthy] = useState(true);
+  const [phonePlacement, setPhonePlacement] = useState<PhonePlacement>('femur');
 
   const accelBuf = useRef<Sample[]>([]);
   const gyroBuf = useRef<Sample[]>([]);
@@ -434,6 +437,7 @@ export default function RecordScreen({ go }: Props) {
         barometer,
         sessionStartNs,
         sessionQuality,
+        phonePlacement,
       });
       const base64 = uint8ToBase64(zipBytes);
 
@@ -516,6 +520,7 @@ export default function RecordScreen({ go }: Props) {
 
   const isStopping = state === 'stopping';
   const isRecording = state === 'recording';
+  const isReady = state === 'ready';
 
   return (
     <View style={styles.root}>
@@ -594,6 +599,10 @@ export default function RecordScreen({ go }: Props) {
 
       {error ? <Text style={styles.errText}>{error}</Text> : null}
 
+      {isReady ? (
+        <PhonePlacementPicker value={phonePlacement} onChange={setPhonePlacement} />
+      ) : null}
+
       <View style={styles.actions}>
         {isRecording ? (
           <BigButton label="Stop Recording" variant="danger" onPress={onStopPressed} />
@@ -621,6 +630,50 @@ export default function RecordScreen({ go }: Props) {
           }}
           disabled={isRecording || isStopping}
         />
+      </View>
+    </View>
+  );
+}
+
+function PhonePlacementPicker({
+  value,
+  onChange,
+}: {
+  value: PhonePlacement;
+  onChange: (next: PhonePlacement) => void;
+}) {
+  const options: { id: PhonePlacement; label: string }[] = [
+    { id: 'femur', label: 'Thigh pocket' },
+    { id: 'chest', label: 'Chest pocket' },
+  ];
+  return (
+    <View style={styles.placementBlock}>
+      <Text style={styles.placementLabel}>Phone placement</Text>
+      <View style={styles.placementRow}>
+        {options.map((opt) => {
+          const selected = value === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              onPress={() => onChange(opt.id)}
+              style={[
+                styles.placementOption,
+                selected ? styles.placementOptionSelected : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.placementOptionText,
+                  selected ? styles.placementOptionTextSelected : null,
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -835,5 +888,41 @@ const styles = StyleSheet.create({
   },
   actions: {
     width: '100%',
+  },
+  placementBlock: {
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  placementLabel: {
+    color: colors.textMuted,
+    fontSize: typography.bodyLarge,
+  },
+  placementRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  placementOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  placementOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  placementOptionText: {
+    color: colors.text,
+    fontSize: typography.bodyLarge,
+    fontWeight: '600',
+  },
+  placementOptionTextSelected: {
+    color: '#ffffff',
   },
 });

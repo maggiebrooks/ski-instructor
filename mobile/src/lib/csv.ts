@@ -219,6 +219,9 @@ export function sessionQualityTier(q: SessionQualityFile): 'green' | 'yellow' | 
   return 'yellow';
 }
 
+/** Where the user reported the phone was carried during the session. */
+export type PhonePlacement = 'femur' | 'chest';
+
 export type SessionBuffers = {
   accel: Sample[];
   gyro: Sample[];
@@ -227,25 +230,41 @@ export type SessionBuffers = {
   /** Nanoseconds since Unix epoch; captured when the user taps Start. */
   sessionStartNs: number;
   sessionQuality: SessionQualityFile;
+  /** User-reported phone placement, picked on the ready screen before recording. */
+  phonePlacement: PhonePlacement;
 };
 
 /**
- * Build a ZIP containing four top-level CSVs:
+ * Build a ZIP containing four top-level CSVs plus two metadata JSON files:
  *
- *   Accelerometer.csv   (always)
- *   Gyroscope.csv       (always)
- *   Location.csv        (only if at least one GPS fix was captured)
- *   Barometer.csv       (only if at least one barometer reading was captured)
+ *   Accelerometer.csv      (always)
+ *   Gyroscope.csv          (always)
+ *   Location.csv           (only if at least one GPS fix was captured)
+ *   Barometer.csv          (only if at least one barometer reading was captured)
+ *   session_quality.json   (always; post-hoc IMU stats)
+ *   session_metadata.json  (always; carries `phone_placement` for the pipeline)
  *
  * The FastAPI upload endpoint only requires `Accelerometer.csv` and
- * `Gyroscope.csv`; the other two are bonus data the pipeline uses if present.
+ * `Gyroscope.csv`; the other files are read by the pipeline if present
+ * (`session_metadata.json` is consumed by `ski/processing/session_processor.py`
+ * to pass `phone_placement` into `align_session` and `insert_session`).
  */
 export function buildSessionZip(buffers: SessionBuffers): Uint8Array {
-  const { accel, gyro, location, barometer, sessionStartNs, sessionQuality } = buffers;
+  const {
+    accel,
+    gyro,
+    location,
+    barometer,
+    sessionStartNs,
+    sessionQuality,
+    phonePlacement,
+  } = buffers;
+  const sessionMetadata = `${JSON.stringify({ phone_placement: phonePlacement }, null, 2)}\n`;
   const files: Record<string, Uint8Array> = {
     'Accelerometer.csv': asciiToBytes(samplesToCsv(accel, sessionStartNs)),
     'Gyroscope.csv': asciiToBytes(samplesToCsv(gyro, sessionStartNs)),
     'session_quality.json': asciiToBytes(buildSessionQualityJson(sessionQuality)),
+    'session_metadata.json': asciiToBytes(sessionMetadata),
   };
   if (location.length > 0) {
     files['Location.csv'] = asciiToBytes(locationToCsv(location, sessionStartNs));

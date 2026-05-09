@@ -27,7 +27,8 @@ def init_db(db_path):
             num_runs            INTEGER,
             total_turns         INTEGER,
             max_speed_kmh       REAL,
-            schema_version      TEXT  -- TODO: split schema_version and processing_version when analytics diverge from DB schema
+            schema_version      TEXT,  -- TODO: split schema_version and processing_version when analytics diverge from DB schema
+            phone_placement     TEXT
         );
 
         CREATE TABLE IF NOT EXISTS runs (
@@ -64,6 +65,11 @@ def init_db(db_path):
             FOREIGN KEY(run_id) REFERENCES runs(run_id)
         );
     """)
+    # Migrate older databases that pre-date the phone_placement column.
+    try:
+        conn.execute("ALTER TABLE sessions ADD COLUMN phone_placement TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     conn.commit()
     return conn
 
@@ -73,8 +79,9 @@ def insert_session(conn, d):
     conn.execute(
         """INSERT OR REPLACE INTO sessions
            (session_id, date, duration_seconds, total_vertical,
-            num_runs, total_turns, max_speed_kmh, schema_version)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            num_runs, total_turns, max_speed_kmh, schema_version,
+            phone_placement)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             d["session_id"],
             d.get("date"),
@@ -84,6 +91,7 @@ def insert_session(conn, d):
             d.get("total_turns"),
             d.get("max_speed_kmh"),
             d.get("schema_version"),
+            d.get("phone_placement"),
         ),
     )
     conn.commit()

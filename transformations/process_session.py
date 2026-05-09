@@ -267,6 +267,9 @@ def segment_runs(df, window_s=30, descent_thresh=-0.3, ascent_thresh=0.3,
         logger.warning(
             "segment_runs: missing relativeAltitude; defaulting to one skiing run"
         )
+        # When this path is taken, the worker sets ``missing_barometer`` and
+        # ``compute_data_quality_flags`` appends the ``MISSING_BAROMETER`` string
+        # (``backend/metrics/confidence.py``) to API ``data_quality_flags``.
         df["alt_rate"] = np.nan
         df["activity"] = "skiing"
         df["run_id"] = 1

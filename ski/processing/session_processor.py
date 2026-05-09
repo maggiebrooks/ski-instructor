@@ -15,6 +15,39 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+_DEFAULT_PLACEMENT = "unknown"
+
+
+def _read_phone_placement(raw_path: Path) -> str:
+    """Read ``phone_placement`` from ``session_metadata.json`` in *raw_path*.
+
+    Returns ``"unknown"`` when the file is missing, unparseable, lacks a
+    string ``phone_placement`` field, or has an empty value. Any non-empty
+    string from the JSON is passed through unchanged so future placements
+    added on the mobile side don't silently regress to "unknown" before the
+    pipeline is updated.
+    """
+    meta_path = Path(raw_path) / "session_metadata.json"
+    if not meta_path.is_file():
+        logger.debug("session_metadata.json not found at %s", meta_path)
+        return _DEFAULT_PLACEMENT
+    try:
+        with open(meta_path, "r") as f:
+            meta = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.debug(
+            "session_metadata.json unreadable at %s: %s", meta_path, exc
+        )
+        return _DEFAULT_PLACEMENT
+    if not isinstance(meta, dict):
+        logger.debug("session_metadata.json is not a JSON object: %s", meta_path)
+        return _DEFAULT_PLACEMENT
+    value = meta.get("phone_placement")
+    if not isinstance(value, str) or not value:
+        return _DEFAULT_PLACEMENT
+    return value
+
+
 class SessionProcessor:
     """Executes the full ski session pipeline programmatically.
 
@@ -67,6 +100,7 @@ class SessionProcessor:
             compute_session_summary,
             plot_session,
         )
+        from ski.frame_alignment import align_session
         from data.database import init_db, insert_session, insert_run, insert_turn
 
         if processed_dir is None:
@@ -86,6 +120,8 @@ class SessionProcessor:
         df = load_session(str(raw_path))
         logger.info("Loaded: %s rows x %d columns", f"{df.shape[0]:,}", df.shape[1])
 
+        phone_placement = _read_phone_placement(raw_path)
+
         # ----- 2. Preprocess -----
         logger.info("Preprocessing …")
         df = preprocess(df)
@@ -94,6 +130,9 @@ class SessionProcessor:
         # ----- 3. Row-level features -----
         logger.info("Computing features …")
         df = compute_row_features(df)
+
+        df = align_session(df, phone_placement=phone_placement)
+        logger.info("Frame alignment applied.")
 
         # ----- 4. Segment runs -----
         logger.info("Segmenting runs …")
@@ -167,6 +206,7 @@ class SessionProcessor:
             "total_turns": summary["total_turns"],
             "max_speed_kmh": summary["max_speed_kmh"],
             "schema_version": self.processing_version,
+            "phone_placement": phone_placement,
         })
 
         for r in run_results:

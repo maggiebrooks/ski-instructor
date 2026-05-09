@@ -1,6 +1,6 @@
 # ski-ai Algorithm Specification
 
-*Living document. Last updated: April 2026.*
+*Living document. Last updated: May 2026.*
 
 This is the **assumptions ledger** for the ski-ai pipeline. Every
 coordinate frame, sample rate, filter cutoff, segmentation threshold,
@@ -38,14 +38,16 @@ Companion documents:
 | Mounting assumption | Phone in **front thigh pocket** (preferred), screen toward body, top of phone roughly upward (see `docs/MASTER_PLAN.md` Phone placement spec) |
 | Validation status | empirical, untested per-session |
 
-### 1.2 Body frame (intermediate, **not yet implemented**)
+### 1.2 Body frame (static alignment, **implemented**)
 
 | Field | Value |
 |-------|-------|
-| Source | Planned: gravity vector (vertical) + GPS bearing (heading) at session start |
-| Definition | Z-axis = −gravity (up); X-axis = projected GPS heading; Y = Z × X |
-| Validation status | future-work; tracked in `algorithm-implications.md` Section 2 |
-| Planned location | `ski/processing/frame_alignment.py` |
+| Implementation | [`ski/frame_alignment.py`](../ski/frame_alignment.py) — `align_session`, called from [`ski/processing/session_processor.py`](../ski/processing/session_processor.py) **after** ``compute_row_features`` and **before** ``segment_runs`` |
+| Definition | One session-wide rotation **R** maps measured gravity in the sensor frame onto body-frame down ``[0, 0, -1]`` (body **+Z** anti-parallel to gravity / “up”). **R** is built with Rodrigues' formula from axis ``cross(ĝ, [0,0,-1])`` and the angle between ``ĝ`` and ``[0,0,-1]``; degenerate parallel cases return identity or a fixed 180° flip about **x**. |
+| Gravity vector **ĝ** (two paths) | **Sensor Logger ZIP with `Gravity.csv` merged:** ``g_vec`` = mean of ``gravity_x``, ``gravity_y``, ``gravity_z`` over the still window (same slice as the accel-only path). ``Accelerometer.csv`` is linear acceleration only → ``accel_includes_gravity=False`` in ``apply_frame_alignment`` (no ``[0,0,-9.81]`` subtraction after rotation). **Mobile recording (no ``gravity_*`` columns):** ``g_vec`` = ``estimate_gravity_vector`` = mean of ``accel_x``, ``accel_y``, ``accel_z`` over that still window → ``accel_includes_gravity=True`` (subtract body-frame ``[0,0,-9.81]`` after rotation). |
+| Still-window detection | Shared helper ``_find_still_window_slice``: rolling minimum of ``gyro_mag`` over ``min_window_s × sample_rate`` rows (default **3.0 s × 20 Hz = 60 samples**); take the index where that rolling minimum is smallest; center a window of that length on it (clamped to DataFrame bounds). Fallback: whole-frame mean when ``gyro_mag`` is missing, the frame is shorter than the window, or the rolling series is all-NaN. |
+| Limitations | Static single rotation for the whole session (no Madgwick / per-sample fusion). GPS heading is **not** used to define body **X**; only gravity alignment is applied. |
+| Validation status | empirical |
 
 ### 1.3 World frame (target)
 
@@ -54,17 +56,19 @@ Companion documents:
 | Convention | X = east, Y = north, Z = up (matches Tang 2024) |
 | Status | future-work; not used by any current metric |
 
-### 1.4 Where we currently use raw sensor-frame values without transformation
+### 1.4 Quantities that remain imperfect after static alignment
 
-| Quantity | File | Line | Treated as |
-|----------|------|-----:|------------|
-| `gyro_z` | [transformations/process_session.py](../transformations/process_session.py) | 288 | Turn axis (true world-vertical only when phone Z ≈ vertical) |
-| `gyro_z` integration | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 26 | Turn angle in radians |
-| `accel_mag` | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 43 | Centripetal magnitude (only valid if pocket motion is dominated by lateral skiing forces) |
-| `roll` (Sensor Logger fused) | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 40 | Edge angle proxy (only valid if Sensor Logger's roll axis aligns with ski edge) |
-| `speed` (GPS) | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 31 | Apex linear speed (m/s) |
+After ``align_session``, ``gyro_z`` peak detection and most metrics use **body-frame** IMU columns (gravity direction aligned to ``-Z``). Residual issues:
 
-Each of these will be revisited once Section 1.2 lands.
+| Quantity | File | Line | Notes |
+|----------|------|-----:|-------|
+| `gyro_z` | [transformations/process_session.py](../transformations/process_session.py) | 311 | Turn axis ≈ yaw rate only when the static rotation matches how the phone moved during the run; pocket slip is uncorrected. |
+| `gyro_z` integration | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 26 | Turn angle in radians (body-frame gyro after alignment). |
+| `accel_mag` | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 43 | Dynamic acceleration magnitude; Sensor Logger path had no gravity in ``accel_*`` before rotation — magnitude semantics differ from mobile path. |
+| `roll` (Sensor Logger fused) | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 40 | Still Sensor Logger's fused attitude — **not** rotated by ``align_session`` unless separately fused in body frame. |
+| `speed` (GPS) | [features/modules/pelvis_turn_module.py](../features/modules/pelvis_turn_module.py) | 31 | Unchanged. |
+
+World-frame alignment (Section 1.3) and ski-edge IMU would obsolete parts of this table.
 
 ---
 
@@ -72,18 +76,18 @@ Each of these will be revisited once Section 1.2 lands.
 
 | Name | Current value | File | Line(s) | Source / justification | Planned change |
 |------|--------------:|------|--------:|------------------------|----------------|
-| Butterworth low-pass cutoff `cutoff` | 5 Hz | `transformations/process_session.py` | 159 | Elfmark 2021 explicitly uses 4th-order zero-phase Butterworth at fc = 5 Hz on position before differentiation | none (fc) |
-| Butterworth filter order `order` | 4 | `transformations/process_session.py` | 159 | Elfmark 2021: 4th-order zero-phase Butterworth at fc = 5 Hz before differentiation | none (shipped) |
-| Down-sample target rate `target_hz` | 20 Hz | `transformations/process_session.py` | 159 | Madgwick 2010 reports < 2° static and < 7° dynamic error even at 10 Hz update rate; 20 Hz is comfortably safe | none |
-| Source IMU rate `source_hz` | 100 Hz | `transformations/process_session.py` | 159 | Sensor Logger native rate | none |
-| `segment_runs.window_s` | 30 s | `transformations/process_session.py` | 221 | empirical (large enough to smooth barometric noise, small enough to catch chairlift transitions) | none until labelled-run study |
-| `segment_runs.descent_thresh` | −0.3 m/s | `transformations/process_session.py` | 221 | empirical | none until labelled-run study |
-| `segment_runs.ascent_thresh` | +0.3 m/s | `transformations/process_session.py` | 221 | empirical | none until labelled-run study |
-| `segment_runs.min_segment_s` | 30 s | `transformations/process_session.py` | 221 | empirical (absorbs short flickers) | none until labelled-run study |
-| `detect_turns.height` | 0.5 rad/s | `transformations/process_session.py` | 288 | empirical, on raw `\|gyro_z\|` in tilted phone frame | recalibrate after Section 1.2 frame alignment lands |
-| `detect_turns.distance` | 20 samples (1 s @ 20 Hz) | `transformations/process_session.py` | 288 | empirical (rules out double-counting of one turn) | none |
+| Butterworth low-pass cutoff `cutoff` | 5 Hz | `transformations/process_session.py` | 183 | Elfmark 2021 explicitly uses 4th-order zero-phase Butterworth at fc = 5 Hz on position before differentiation | none (fc) |
+| Butterworth filter order `order` | 4 | `transformations/process_session.py` | 183 | Elfmark 2021: 4th-order zero-phase Butterworth at fc = 5 Hz before differentiation | none (shipped) |
+| Down-sample target rate `target_hz` | 20 Hz | `transformations/process_session.py` | 183 | Madgwick 2010 reports < 2° static and < 7° dynamic error even at 10 Hz update rate; 20 Hz is comfortably safe | none |
+| Source IMU rate `source_hz` | 100 Hz | `transformations/process_session.py` | 183 | Sensor Logger native rate | none |
+| `segment_runs.window_s` | 30 s | `transformations/process_session.py` | 250 | empirical (large enough to smooth barometric noise, small enough to catch chairlift transitions) | none until labelled-run study |
+| `segment_runs.descent_thresh` | −0.3 m/s | `transformations/process_session.py` | 250 | empirical | none until labelled-run study |
+| `segment_runs.ascent_thresh` | +0.3 m/s | `transformations/process_session.py` | 250 | empirical | none until labelled-run study |
+| `segment_runs.min_segment_s` | 30 s | `transformations/process_session.py` | 250 | empirical (absorbs short flickers) | none until labelled-run study |
+| `detect_turns.height` | 0.5 rad/s | `transformations/process_session.py` | 311 | empirical on `\|gyro_z\|` after static frame alignment | revisit threshold tuning with labelled turns |
+| `detect_turns.distance` | 20 samples (1 s @ 20 Hz) | `transformations/process_session.py` | 311 | empirical (rules out double-counting of one turn) | none |
 | Min turns for movement scores `MIN_TURNS_FOR_SCORES` | 5 | `ski/analysis/turn_insights.py` | 35 | empirical; below this, CV / median estimates are too noisy | revisit if jack-knife noise study suggests a higher floor |
-| Centripetal radius safe-floor `safe_radius` | 0.5 m | `ski/analysis/turn_insights.py` | 288 | empirical (avoids divide-by-zero and degenerate apex turns) | none |
+| Centripetal radius safe-floor `safe_radius` | 0.5 m | `ski/analysis/turn_insights.py` | 318 | empirical (avoids divide-by-zero and degenerate apex turns) | none |
 | `EDGE_PROGRESSIVENESS_SCALE` | 45.0 | `ski/analysis/turn_insights.py` | 42 | empirical (rescales median edge-build slope from deg/s before clipping to [0, 1]; Section 2) | recalibrate from beta session distribution |
 | Carving phase signal floor (gyro / speed) | gyro > 0.1 rad/s, speed > 1.0 m/s | `features/modules/carving_phase_module.py` | 80 | empirical | none |
 
@@ -149,17 +153,18 @@ Defined at [ski/analysis/turn_insights.py L298-L308](../ski/analysis/turn_insigh
 
 ### 3.4 Movement score clipping ranges
 
-All six scores are clipped to [0, 1] after composition. Their
+All seven scores are clipped to [0, 1] after composition. Their
 ingredient-level clipping appears in `compute_movement_scores`:
 
 | Score | Composition | Clipping locations |
 |-------|------------|--------------------|
 | `rotary_stability` | `1 − clip(torso_rotation_ratio, 0, 1)` | [ski/analysis/turn_insights.py L408-L411](../ski/analysis/turn_insights.py) |
 | `edge_consistency` | mean of `1 − clip(radius_cv)`, `clip(median(edge_prog) / EDGE_PROGRESSIVENESS_SCALE)`, `1 − clip(radius_stability)` | [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) ``compute_movement_scores`` |
-| `pressure_management` | `clip(pressure_ratio)` (or fallback `clip(g_force/1.2)`), combined with `1 − clip(speed_loss)` | [ski/analysis/turn_insights.py L428-L446](../ski/analysis/turn_insights.py) |
+| `pressure_management` | `clip(pressure_ratio)` (or fallback `clip(g_force/1.2)`), combined with speed efficiency `1 − clip(speed_loss)` | [ski/analysis/turn_insights.py L428-L446](../ski/analysis/turn_insights.py) |
 | `turn_symmetry` | mean of `1 − clip(\|L−R\|/total)`, `clip(symmetry)`, `1 − clip(\|L_radius − R_radius\|/avg_radius)` | [ski/analysis/turn_insights.py L448-L467](../ski/analysis/turn_insights.py) |
 | `turn_shape_consistency` | mean of `1 − clip(radius_cv)`, `1 − clip(angle_cv)` | [ski/analysis/turn_insights.py L469-L478](../ski/analysis/turn_insights.py) |
 | `turn_rhythm` | `1 − clip(duration_cv)` | [ski/analysis/turn_insights.py L480-L491](../ski/analysis/turn_insights.py) |
+| `turn_efficiency` | `1 − clip(speed_loss_avg, 0, 1)` when GPS ``speed_loss_ratio`` is available (also feeds ``pressure_management``) | [ski/analysis/turn_insights.py](../ski/analysis/turn_insights.py) ``compute_movement_scores`` |
 
 The pressure-management `1.2 g` fallback ceiling at line 438 is a
 **hard-coded heuristic** equivalent to "1.2 g is a strong
@@ -217,7 +222,7 @@ event (see Section 6) and a measured noise band.
 | Event | When | Targets |
 |-------|------|---------|
 | **Desk physics pass**: \(g_{\text{expected}} = v^2/(r g_0)\) grid, unity anchor, tolerance bands, `accel_mag` vs. lateral caveat | Before next winter (rainy-afternoon scope) | Section 3.1: replace invented 0.6 / 0.8 / 1.2 with derived numbers + documented assumptions; see [research/algorithm-implications.md §6](research/algorithm-implications.md) |
-| Frame-alignment landing | Six-month window (before next winter) | Sections 1.2, 1.3; recalibrates 1.4 entries |
+| Static frame alignment (`ski/frame_alignment.py`, Section 1.2) | **Shipped** (May 2026) | Recalibrate Section 2 `detect_turns.*` thresholds against labelled data; extend with Madgwick / GPS heading if needed |
 | 4th-order Butterworth at fc = 5 Hz in `preprocess()` | **Done** (shipped with this parameter set) | Section 2 row `order` = 4; regression = `pytest tests/` |
 | Intentional-error on-snow session (10 runs: backseat, banking, skidding, plus baseline) | Next winter (Dec 2026 / Jan 2027) | **Tunes** Section 3.1–3.4 after the desk pass; separates error categories from baseline; cannot be the first time thresholds meet \(F=mv^2/r\) |
 | Repeat-skier longitudinal study | After ≥ 5 users with ≥ 3 sessions each | `MIN_TURNS_FOR_SCORES`, jack-knife uncertainty bands |

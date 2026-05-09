@@ -24,7 +24,7 @@ HIGH_MISSING_DATA = "HIGH_MISSING_DATA"
 # Emitted when segment_runs in transformations/process_session.py L266
 # took its missing-relativeAltitude fallback (single-skiing-run default).
 # See docs/algorithm-spec.md Section 4 (Known limitations).
-MISSING_BAROMETER = "missing_barometer"
+MISSING_BAROMETER = "MISSING_BAROMETER"
 
 
 def compute_confidence(
